@@ -36,18 +36,32 @@ extern const sp_nativeinfo_t sourcetv_natives[];
 // native SourceTV_GetHLTVServerCount();
 static cell_t Native_GetHLTVServerCount(IPluginContext *pContext, const cell_t *params)
 {
+#if SOURCE_ENGINE == SE_CSGO
 	return hltvdirector->GetHLTVServerCount();
+#else
+	return hltvdirector->GetHLTVServer() ? 1 : 0;
+#endif
 }
 
 // native SourceTV_SelectHLTVServer();
 static cell_t Native_SelectHLTVServer(IPluginContext *pContext, const cell_t *params)
 {
+#if SOURCE_ENGINE == SE_CSGO
 	if (params[1] < 0 || params[1] >= hltvdirector->GetHLTVServerCount())
 	{
 		pContext->ReportError("Invalid HLTV server instance number (%d).", params[1]);
 		return 0;
 	}
 	g_STVManager.SelectSourceTVServer(hltvdirector->GetHLTVServer(params[1]));
+#else
+	if (params[1] != 0 || !hltvdirector->GetHLTVServer())
+	{
+		pContext->ReportError("Invalid HLTV server instance number (%d).", params[1]);
+		return 0;
+	}
+	// There only is one hltv server.
+	g_STVManager.SelectSourceTVServer(hltvdirector->GetHLTVServer());
+#endif
 
 	return 0;
 }
@@ -58,6 +72,7 @@ static cell_t Native_GetSelectedHLTVServer(IPluginContext *pContext, const cell_
 	if (hltvserver == nullptr)
 		return -1;
 
+#if SOURCE_ENGINE == SE_CSGO
 	for (int i = 0; i < hltvdirector->GetHLTVServerCount(); i++)
 	{
 		if (hltvserver == hltvdirector->GetHLTVServer(i))
@@ -67,6 +82,10 @@ static cell_t Native_GetSelectedHLTVServer(IPluginContext *pContext, const cell_
 	// We should have found it in the above loop :S
 	hltvserver = nullptr;
 	return -1;
+#else
+	// There only is one hltv server.
+	return 0;
+#endif
 }
 
 // native SourceTV_GetBotIndex();
@@ -228,10 +247,10 @@ static cell_t Native_GetViewCoordinates(IPluginContext *pContext, const cell_t *
 // native bool:SourceTV_IsRecording();
 static cell_t Native_IsRecording(IPluginContext *pContext, const cell_t *params)
 {
-	if (hltvserver == nullptr)
+	if (demorecorder == nullptr)
 		return 0;
 
-	return hltvserver->IsRecording();
+	return demorecorder->IsRecording();
 }
 
 // Checks in COM_IsValidPath in the engine
@@ -243,7 +262,7 @@ static bool IsValidPath(const char *path)
 // native bool:SourceTV_StartRecording(const String:sFilename[]);
 static cell_t Native_StartRecording(IPluginContext *pContext, const cell_t *params)
 {
-	if (hltvserver == nullptr)
+	if (hltvserver == nullptr || demorecorder == nullptr)
 		return 0;
 
 	// SourceTV is not active.
@@ -255,7 +274,7 @@ static cell_t Native_StartRecording(IPluginContext *pContext, const cell_t *para
 		return 0;
 
 	// already recording
-	if (hltvserver->IsRecording())
+	if (demorecorder->IsRecording())
 		return 0;
 
 	char *pFile;
@@ -274,7 +293,8 @@ static cell_t Native_StartRecording(IPluginContext *pContext, const cell_t *para
 	else
 		ext = "";
 	smutils->Format(pPath, sizeof(pPath), "%s%s", pFile, ext);
-	
+
+#if SOURCE_ENGINE == SE_CSGO
 	if (hltvdirector->GetHLTVServerCount() > 1)
 	{
 		for (int i = 0; i < hltvdirector->GetHLTVServerCount(); i++)
@@ -288,6 +308,7 @@ static cell_t Native_StartRecording(IPluginContext *pContext, const cell_t *para
 				return 0;
 		}
 	}
+#endif
 
 	demorecorder->StartRecording(pPath, false);
 
@@ -297,15 +318,18 @@ static cell_t Native_StartRecording(IPluginContext *pContext, const cell_t *para
 // native bool:SourceTV_StopRecording();
 static cell_t Native_StopRecording(IPluginContext *pContext, const cell_t *params)
 {
-	if (hltvserver == nullptr)
+	if (demorecorder == nullptr)
 		return 0;
 
-	if (!hltvserver->IsRecording())
+	if (!demorecorder->IsRecording())
 		return 0;
 
+#if SOURCE_ENGINE == SE_CSGO
 	hltvserver->StopRecording(NULL);
-
 	// TODO: Stop recording on all other active hltvservers (tv_stoprecord in csgo does this)
+#else
+	demorecorder->StopRecording();
+#endif
 
 	return 1;
 }
@@ -313,13 +337,13 @@ static cell_t Native_StopRecording(IPluginContext *pContext, const cell_t *param
 // native bool:SourceTV_GetDemoFileName(String:sFilename[], maxlen);
 static cell_t Native_GetDemoFileName(IPluginContext *pContext, const cell_t *params)
 {
-	if (hltvserver == nullptr)
+	if (demorecorder == nullptr)
 		return 0;
 
-	if (!hltvserver->IsRecording())
+	if (!demorecorder->IsRecording())
 		return 0;
 
-	char *pDemoFile = hltvserver->GetRecordingDemoFilename();
+	char *pDemoFile = (char *)demorecorder->GetDemoFile();
 	if (!pDemoFile)
 		return 0;
 

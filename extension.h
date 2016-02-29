@@ -43,6 +43,7 @@
 #include "ihltvdirector.h"
 #include "ihltv.h"
 #include "iserver.h"
+#include "iclient.h"
 #include "ihltvdemorecorder.h"
 #include "igameevents.h"
 
@@ -126,9 +127,12 @@ public:
 	IDemoRecorder *GetDemoRecorderPtr(IHLTVServer *hltvserver);
 
 private:
+#if SOURCE_ENGINE == SE_CSGO
 	void OnAddHLTVServer_Post(IHLTVServer *hltv);
 	void OnRemoveHLTVServer_Post(IHLTVServer *hltv);
-	bool OnHLTVBotSendNetMsg_Post(INetMessage &msg, bool bForceReliable, bool bVoice);
+#else
+	void OnSetHLTVServer_Post(IHLTVServer *hltv);
+#endif
 	bool OnHLTVBotExecuteStringCommand(const char *s);
 	bool OnHLTVBotExecuteStringCommand_Post(const char *s);
 

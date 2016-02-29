@@ -46,8 +46,12 @@ ISDKTools *sdktools = nullptr;
 IServer *iserver = nullptr;
 IGameConfig *g_pGameConf = nullptr;
 
+#if SOURCE_ENGINE == SE_CSGO
 SH_DECL_HOOK1_void(IHLTVDirector, AddHLTVServer, SH_NOATTRIB, 0, IHLTVServer *);
 SH_DECL_HOOK1_void(IHLTVDirector, RemoveHLTVServer, SH_NOATTRIB, 0, IHLTVServer *);
+#else
+SH_DECL_HOOK1_void(IHLTVDirector, SetHLTVServer, SH_NOATTRIB, 0, IHLTVServer *);
+#endif
 
 SH_DECL_HOOK1(IClient, ExecuteStringCommand, SH_NOATTRIB, 0, bool, const char *);
 
@@ -92,8 +96,12 @@ bool SourceTVManager::SDK_OnLoad(char *error, size_t maxlength, bool late)
 
 void SourceTVManager::SDK_OnAllLoaded()
 {
+#if SOURCE_ENGINE == SE_CSGO
 	SH_ADD_HOOK(IHLTVDirector, AddHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnAddHLTVServer_Post), true);
 	SH_ADD_HOOK(IHLTVDirector, RemoveHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnRemoveHLTVServer_Post), true);
+#else
+	SH_ADD_HOOK(IHLTVDirector, SetHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnSetHLTVServer_Post), true);
+#endif
 
 	SM_GET_LATE_IFACE(BINTOOLS, bintools);
 	SM_GET_LATE_IFACE(SDKTOOLS, sdktools);
@@ -104,6 +112,7 @@ void SourceTVManager::SDK_OnAllLoaded()
 	if (!iserver)
 		smutils->LogError(myself, "Failed to get IServer interface from SDKTools. Some functions won't work.");
 
+#if SOURCE_ENGINE == SE_CSGO
 	if (hltvdirector->GetHLTVServerCount() > 0)
 		SelectSourceTVServer(hltvdirector->GetHLTVServer(0));
 
@@ -112,6 +121,13 @@ void SourceTVManager::SDK_OnAllLoaded()
 	{
 		g_pSTVForwards.HookRecorder(GetDemoRecorderPtr(hltvdirector->GetHLTVServer(i)));
 	}
+#else
+	if (hltvdirector->GetHLTVServer())
+	{
+		SelectSourceTVServer(hltvdirector->GetHLTVServer());
+		g_pSTVForwards.HookRecorder(GetDemoRecorderPtr(hltvdirector->GetHLTVServer()));
+	}
+#endif
 }
 
 bool SourceTVManager::SDK_OnMetamodLoad(ISmmAPI *ismm, char *error, size_t maxlen, bool late)
@@ -124,16 +140,26 @@ bool SourceTVManager::SDK_OnMetamodLoad(ISmmAPI *ismm, char *error, size_t maxle
 
 void SourceTVManager::SDK_OnUnload()
 {
+#if SOURCE_ENGINE == SE_CSGO
 	SH_REMOVE_HOOK(IHLTVDirector, AddHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnAddHLTVServer_Post), true);
 	SH_REMOVE_HOOK(IHLTVDirector, RemoveHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnRemoveHLTVServer_Post), true);
+#else
+	SH_REMOVE_HOOK(IHLTVDirector, SetHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnSetHLTVServer_Post), true);
+#endif
 
 	gameconfs->CloseGameConfigFile(g_pGameConf);
 
+#if SOURCE_ENGINE == SE_CSGO
 	// Unhook all the existing servers.
 	for (int i = 0; i < hltvdirector->GetHLTVServerCount(); i++)
 	{
 		g_pSTVForwards.UnhookRecorder(GetDemoRecorderPtr(hltvdirector->GetHLTVServer(i)));
 	}
+#else
+	// Unhook the server
+	if (hltvdirector->GetHLTVServer())
+		g_pSTVForwards.UnhookRecorder(GetDemoRecorderPtr(hltvdirector->GetHLTVServer()));
+#endif
 	g_pSTVForwards.Shutdown();
 }
 
@@ -176,7 +202,7 @@ void SourceTVManager::SelectSourceTVServer(IHLTVServer *hltv)
 	SH_ADD_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand_Post), true);
 }
 
-IDemoRecorder *SourceTVManager::GetDemoRecorderPtr(IHLTVServer *hltvserver)
+IDemoRecorder *SourceTVManager::GetDemoRecorderPtr(IHLTVServer *hltv)
 {
 	static int offset = -1;
 	if (offset == -1 && !g_pGameConf->GetOffset("CHLTVServer::m_DemoRecorder", &offset))
@@ -185,8 +211,8 @@ IDemoRecorder *SourceTVManager::GetDemoRecorderPtr(IHLTVServer *hltvserver)
 		return nullptr;
 	}
 
-	if (hltvserver)
-		return (IDemoRecorder *)((intptr_t)hltvserver + offset);
+	if (hltv)
+		return (IDemoRecorder *)((intptr_t)hltv + offset);
 	else
 		return nullptr;
 }
@@ -196,6 +222,7 @@ void SourceTVManager::UpdateDemoRecorderPointer()
 	demorecorder = GetDemoRecorderPtr(hltvserver);
 }
 
+#if SOURCE_ENGINE == SE_CSGO
 void SourceTVManager::OnAddHLTVServer_Post(IHLTVServer *hltv)
 {
 	g_pSTVForwards.HookRecorder(GetDemoRecorderPtr(hltv));
@@ -206,6 +233,7 @@ void SourceTVManager::OnAddHLTVServer_Post(IHLTVServer *hltv)
 	
 	// This is the first SourceTV server to be added. Hook it.
 	SelectSourceTVServer(hltv);
+	RETURN_META(MRES_IGNORED);
 }
 
 void SourceTVManager::OnRemoveHLTVServer_Post(IHLTVServer *hltv)
@@ -221,7 +249,29 @@ void SourceTVManager::OnRemoveHLTVServer_Post(IHLTVServer *hltv)
 		else
 			SelectSourceTVServer(nullptr);
 	}
+	RETURN_META(MRES_IGNORED);
 }
+#else
+void SourceTVManager::OnSetHLTVServer_Post(IHLTVServer *hltv)
+{
+	META_CONPRINTF("%x == %x ?", hltv, hltvdirector->GetHLTVServer());
+	// Server shut down?
+	if (!hltv)
+	{
+		// We didn't catch the server being set..
+		if (!hltvserver)
+			RETURN_META(MRES_IGNORED);
+
+		g_pSTVForwards.UnhookRecorder(GetDemoRecorderPtr(hltvserver));
+	}
+	else
+	{
+		g_pSTVForwards.HookRecorder(GetDemoRecorderPtr(hltv));
+	}
+	SelectSourceTVServer(hltv);
+	RETURN_META(MRES_IGNORED);
+}
+#endif
 
 bool SourceTVManager::OnHLTVBotExecuteStringCommand(const char *s)
 {

@@ -47,7 +47,11 @@ public:
 
 private:
 	void OnStartRecording_Post(const char *filename, bool bContinuously);
+#if SOURCE_ENGINE == SE_CSGO
 	void OnStopRecording_Post(CGameInfo const *info);
+#else
+	void OnStopRecording_Post();
+#endif
 
 private:
 	IForward *m_StartRecordingFwd;

@@ -35,7 +35,11 @@
 CForwardManager g_pSTVForwards;
 
 SH_DECL_HOOK2_void(IDemoRecorder, StartRecording, SH_NOATTRIB, 0, const char *, bool)
+#if SOURCE_ENGINE == SE_CSGO
 SH_DECL_HOOK1_void(IDemoRecorder, StopRecording, SH_NOATTRIB, 0, CGameInfo const *)
+#else
+SH_DECL_HOOK0_void(IDemoRecorder, StopRecording, SH_NOATTRIB, 0)
+#endif
 
 void CForwardManager::Init()
 {
@@ -74,7 +78,11 @@ void CForwardManager::OnStartRecording_Post(const char *filename, bool bContinuo
 	RETURN_META(MRES_IGNORED);
 }
 
+#if SOURCE_ENGINE == SE_CSGO
 void CForwardManager::OnStopRecording_Post(CGameInfo const *info)
+#else
+void CForwardManager::OnStopRecording_Post()
+#endif
 {
 	if (m_StopRecordingFwd->GetFunctionCount() == 0)
 		RETURN_META(MRES_IGNORED);

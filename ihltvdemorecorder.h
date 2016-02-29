@@ -18,7 +18,11 @@ public:
 	virtual bool	IsRecording(void) = 0;
 	virtual void	PauseRecording(void) = 0;
 	virtual void	ResumeRecording(void) = 0;
+#if SOURCE_ENGINE == SE_CSGO
 	virtual void	StopRecording(CGameInfo const *info) = 0;
+#else
+	virtual void	StopRecording(void) = 0;
+#endif
 
 	virtual void	RecordCommand(const char *cmdstring) = 0; 
 	virtual void	RecordUserInput(int cmdnumber) = 0;
@@ -26,7 +30,9 @@ public:
 	virtual void	RecordPacket(void) = 0;
 	virtual void	RecordServerClasses(ServerClass *pClasses) = 0;
 	virtual void	RecordStringTables(void);
+#if SOURCE_ENGINE == SE_CSGO
 	virtual void	RecordCustomData(int, void const *, unsigned int);
+#endif
 
 	virtual void	ResetDemoInterpolation(void) = 0;
 };

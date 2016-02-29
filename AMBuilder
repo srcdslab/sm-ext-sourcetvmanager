@@ -25,7 +25,7 @@ else:
 
 project.sources += sourceFiles
   
-for sdk_name in ['csgo']:
+for sdk_name in ['css', 'csgo']:
   if sdk_name not in Extension.sdks:
     continue
   sdk = Extension.sdks[sdk_name]

@@ -23,7 +23,6 @@
 			{
 				"windows"	"39"
 				"linux"		"40"
-				"mac"		"40"
 			}
 			
 			"CHLTVServer::m_DemoRecorder"
@@ -40,6 +39,48 @@
 				"linux"	"@host_client"
 				// ping(CCommand const&) "Client ping times:\n"
 				"windows" "\x55\x8B\xEC\x83\xE4\xC0\x83\xEC\x34\x83\x3D\x2A\x2A\x2A\x2A\x01\x53\x56\x57\x75\x2A"
+			}
+		}
+	}
+	"cstrike"
+	{
+		"Addresses"
+		{
+			"host_client"
+			{
+				"windows"
+				{
+					"signature"	"host_client"
+					"read" "92"
+				}
+				"linux"
+				{
+					"signature" "host_client"
+				}
+			}
+		}
+		"Offsets"
+		{
+			"BroadcastPrintf"
+			{
+				"windows"	"35"
+				"linux"		"36"
+			}
+			
+			"CHLTVServer::m_DemoRecorder"
+			{
+				"windows"	"19192"
+				"linux"	"19424" // -416
+			}
+		}
+		"Signatures"
+		{
+			"host_client"
+			{
+				"library"	"engine"
+				"linux"	"@host_client"
+				// ping(CCommand const&) "Client ping times:\n"
+				"windows" "\x55\x8B\xEC\x51\x83\x3D\x2A\x2A\x2A\x2A\x01\x75\x2A"
 			}
 		}
 	}
