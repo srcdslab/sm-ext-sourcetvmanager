@@ -63,14 +63,16 @@ public __ext_stvmngr_SetNTVOptional()
 	MarkNativeAsOptional("SourceTV_GetLocalStats");
 	MarkNativeAsOptional("SourceTV_GetBroadcastTick");
 	MarkNativeAsOptional("SourceTV_GetDelay");
-	MarkNativeAsOptional("SourceTV_SendHintMessage");
+	MarkNativeAsOptional("SourceTV_BroadcastHintMessage");
 	MarkNativeAsOptional("SourceTV_BroadcastConsoleMessage");
+	MarkNativeAsOptional("SourceTV_GetViewEntity");
+	MarkNativeAsOptional("SourceTV_GetViewCoordinates");
 	MarkNativeAsOptional("SourceTV_StartRecording");
 	MarkNativeAsOptional("SourceTV_StopRecording");
 	MarkNativeAsOptional("SourceTV_IsRecording");
 	MarkNativeAsOptional("SourceTV_GetDemoFileName");
 	MarkNativeAsOptional("SourceTV_GetRecordingTick");
-	MarkNativeAsOptional("SourceTV_PrintBotConsole");
+	MarkNativeAsOptional("SourceTV_PrintToDemoConsole");
 	MarkNativeAsOptional("SourceTV_GetSpectatorCount");
 	MarkNativeAsOptional("SourceTV_GetMaxClients");
 	MarkNativeAsOptional("SourceTV_GetClientCount");

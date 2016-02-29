@@ -119,13 +119,13 @@ void SourceTVManager::SDK_OnAllLoaded()
 	// Hook all the exisiting servers.
 	for (int i = 0; i < hltvdirector->GetHLTVServerCount(); i++)
 	{
-		g_pSTVForwards.HookRecorder(GetDemoRecorderPtr(hltvdirector->GetHLTVServer(i)));
+		HookSourceTVServer(hltvdirector->GetHLTVServer(i));
 	}
 #else
 	if (hltvdirector->GetHLTVServer())
 	{
 		SelectSourceTVServer(hltvdirector->GetHLTVServer());
-		g_pSTVForwards.HookRecorder(GetDemoRecorderPtr(hltvdirector->GetHLTVServer()));
+		HookSourceTVServer(hltvdirector->GetHLTVServer());
 	}
 #endif
 }
@@ -153,12 +153,12 @@ void SourceTVManager::SDK_OnUnload()
 	// Unhook all the existing servers.
 	for (int i = 0; i < hltvdirector->GetHLTVServerCount(); i++)
 	{
-		g_pSTVForwards.UnhookRecorder(GetDemoRecorderPtr(hltvdirector->GetHLTVServer(i)));
+		UnhookSourceTVServer(hltvdirector->GetHLTVServer(i));
 	}
 #else
 	// Unhook the server
 	if (hltvdirector->GetHLTVServer())
-		g_pSTVForwards.UnhookRecorder(GetDemoRecorderPtr(hltvdirector->GetHLTVServer()));
+		UnhookSourceTVServer(hltvdirector->GetHLTVServer());
 #endif
 	g_pSTVForwards.Shutdown();
 }
@@ -171,35 +171,47 @@ bool SourceTVManager::QueryRunning(char *error, size_t maxlength)
 	return true;
 }
 
-void SourceTVManager::SelectSourceTVServer(IHLTVServer *hltv)
+void SourceTVManager::HookSourceTVServer(IHLTVServer *hltv)
 {
-	// Need to unhook the old server first?
-	if (hltvserver != nullptr && iserver != nullptr)
+	if (hltv != nullptr)
 	{
-		IClient *pClient = iserver->GetClient(hltvserver->GetHLTVSlot());
-		if (pClient)
+		g_pSTVForwards.HookRecorder(GetDemoRecorderPtr(hltv));
+
+		if (iserver)
 		{
-			SH_REMOVE_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand), false);
-			SH_REMOVE_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand_Post), true);
+			IClient *pClient = iserver->GetClient(hltv->GetHLTVSlot());
+			if (pClient)
+			{
+				SH_ADD_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand), false);
+				SH_ADD_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand_Post), true);
+			}
 		}
 	}
+}
 
+void SourceTVManager::UnhookSourceTVServer(IHLTVServer *hltv)
+{
+	if (hltv != nullptr)
+	{
+		g_pSTVForwards.UnhookRecorder(GetDemoRecorderPtr(hltv));
+
+		if (iserver)
+		{
+			IClient *pClient = iserver->GetClient(hltv->GetHLTVSlot());
+			if (pClient)
+			{
+				SH_REMOVE_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand), false);
+				SH_REMOVE_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand_Post), true);
+			}
+		}
+	}
+}
+
+void SourceTVManager::SelectSourceTVServer(IHLTVServer *hltv)
+{
 	// Select the new server.
 	hltvserver = hltv;
-
-	UpdateDemoRecorderPointer();
-	
-	if (!hltvserver)
-		return;
-
-	if (!iserver)
-		return;
-	IClient *pClient = iserver->GetClient(hltvserver->GetHLTVSlot());
-	if (!pClient)
-		return;
-
-	SH_ADD_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand), false);
-	SH_ADD_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand_Post), true);
+	demorecorder = GetDemoRecorderPtr(hltvserver);
 }
 
 IDemoRecorder *SourceTVManager::GetDemoRecorderPtr(IHLTVServer *hltv)
@@ -217,15 +229,10 @@ IDemoRecorder *SourceTVManager::GetDemoRecorderPtr(IHLTVServer *hltv)
 		return nullptr;
 }
 
-void SourceTVManager::UpdateDemoRecorderPointer()
-{
-	demorecorder = GetDemoRecorderPtr(hltvserver);
-}
-
 #if SOURCE_ENGINE == SE_CSGO
 void SourceTVManager::OnAddHLTVServer_Post(IHLTVServer *hltv)
 {
-	g_pSTVForwards.HookRecorder(GetDemoRecorderPtr(hltv));
+	HookSourceTVServer(hltv);
 
 	// We already selected some SourceTV server. Keep it.
 	if (hltvserver != nullptr)
@@ -238,23 +245,28 @@ void SourceTVManager::OnAddHLTVServer_Post(IHLTVServer *hltv)
 
 void SourceTVManager::OnRemoveHLTVServer_Post(IHLTVServer *hltv)
 {
-	g_pSTVForwards.UnhookRecorder(GetDemoRecorderPtr(hltv));
+	UnhookSourceTVServer(hltv);
 
 	// We got this SourceTV server selected. Now it's gone :(
 	if (hltvserver == hltv)
 	{
 		// Is there another one available? Try to keep us operable.
 		if (hltvdirector->GetHLTVServerCount() > 0)
+		{
 			SelectSourceTVServer(hltvdirector->GetHLTVServer(0));
+			HookSourceTVServer(hltvserver);
+		}
+		// No sourcetv active.
 		else
+		{
 			SelectSourceTVServer(nullptr);
+		}
 	}
 	RETURN_META(MRES_IGNORED);
 }
 #else
 void SourceTVManager::OnSetHLTVServer_Post(IHLTVServer *hltv)
 {
-	META_CONPRINTF("%x == %x ?", hltv, hltvdirector->GetHLTVServer());
 	// Server shut down?
 	if (!hltv)
 	{
@@ -262,11 +274,11 @@ void SourceTVManager::OnSetHLTVServer_Post(IHLTVServer *hltv)
 		if (!hltvserver)
 			RETURN_META(MRES_IGNORED);
 
-		g_pSTVForwards.UnhookRecorder(GetDemoRecorderPtr(hltvserver));
+		UnhookSourceTVServer(hltvserver);
 	}
 	else
 	{
-		g_pSTVForwards.HookRecorder(GetDemoRecorderPtr(hltv));
+		HookSourceTVServer(hltv);
 	}
 	SelectSourceTVServer(hltv);
 	RETURN_META(MRES_IGNORED);

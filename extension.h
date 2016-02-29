@@ -137,7 +137,8 @@ private:
 	bool OnHLTVBotExecuteStringCommand_Post(const char *s);
 
 private:
-	void UpdateDemoRecorderPointer();
+	void HookSourceTVServer(IHLTVServer *hltv);
+	void UnhookSourceTVServer(IHLTVServer *hltv);
 };
 
 /* Interfaces from SourceMod */
