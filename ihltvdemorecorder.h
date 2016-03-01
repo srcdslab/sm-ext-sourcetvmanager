@@ -5,6 +5,7 @@
 class CDemoFile;
 class bf_read;
 class ServerClass;
+class CGameInfo;
 
 class IDemoRecorder
 {

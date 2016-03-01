@@ -231,6 +231,8 @@ static cell_t Native_BroadcastConsoleMessage(IPluginContext *pContext, const cel
 	buffer[len++] = '\n';
 	buffer[len] = '\0';
 
+	static char fmt[] = "%s";
+
 	if (pBroadcastPrintf)
 	{
 		unsigned char vstk[sizeof(void *) + sizeof(char *) * 2];
@@ -238,7 +240,7 @@ static cell_t Native_BroadcastConsoleMessage(IPluginContext *pContext, const cel
 
 		*(void **)vptr = (void *)hltvserver->GetBaseServer();
 		vptr += sizeof(void *);
-		*(char **)vptr = "%s";
+		*(char **)vptr = fmt;
 		vptr += sizeof(char *);
 		*(char **)vptr = buffer;
 
