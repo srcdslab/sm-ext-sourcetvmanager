@@ -43,7 +43,7 @@ SH_DECL_HOOK0_void(IDemoRecorder, StopRecording, SH_NOATTRIB, 0)
 
 void CForwardManager::Init()
 {
-	m_StartRecordingFwd = forwards->CreateForward("SourceTV_OnStartRecording", ET_Ignore, 3, NULL, Param_Cell, Param_String, Param_Cell);
+	m_StartRecordingFwd = forwards->CreateForward("SourceTV_OnStartRecording", ET_Ignore, 3, NULL, Param_Cell, Param_String);
 	m_StopRecordingFwd = forwards->CreateForward("SourceTV_OnStopRecording", ET_Ignore, 3, NULL, Param_Cell, Param_String, Param_Cell);
 }
 
@@ -72,7 +72,6 @@ void CForwardManager::OnStartRecording_Post(const char *filename, bool bContinuo
 
 	m_StartRecordingFwd->PushCell(0); // TODO: Get current hltvserver index
 	m_StartRecordingFwd->PushString(filename);
-	m_StartRecordingFwd->PushCell(bContinuously);
 	m_StartRecordingFwd->Execute();
 
 	RETURN_META(MRES_IGNORED);

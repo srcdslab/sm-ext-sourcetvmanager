@@ -30,19 +30,19 @@ public OnPluginStart()
 	RegConsoleCmd("sm_speckick", Cmd_KickClient);
 }
 
-public SourceTV_OnStartRecording(hltvinstance, const String:filename[], bool:bContinuously)
+public SourceTV_OnStartRecording(instance, const String:filename[])
 {
-	PrintToServer("Started recording sourcetv #%d demo to %s (continuosly %d)", hltvinstance, filename, bContinuously);
+	PrintToServer("Started recording sourcetv #%d demo to %s", instance, filename);
 }
 
-public SourceTV_OnStopRecording(hltvinstance, const String:filename[], recordingtick)
+public SourceTV_OnStopRecording(instance, const String:filename[], recordingtick)
 {
-	PrintToServer("Stopped recording sourcetv #%d demo to %s (%d ticks)", hltvinstance, filename, recordingtick);
+	PrintToServer("Stopped recording sourcetv #%d demo to %s (%d ticks)", instance, filename, recordingtick);
 }
 
 public Action:Cmd_GetServerCount(client, args)
 {
-	ReplyToCommand(client, "SourceTV server count: %d", SourceTV_GetHLTVServerCount());
+	ReplyToCommand(client, "SourceTV server count: %d", SourceTV_GetServerInstanceCount());
 	return Plugin_Handled;
 }
 
@@ -58,14 +58,14 @@ public Action:Cmd_SelectServer(client, args)
 	GetCmdArg(1, sArg, sizeof(sArg));
 	new iInstance = StringToInt(sArg);
 	
-	SourceTV_SelectHLTVServer(iInstance);
+	SourceTV_SelectServerInstance(iInstance);
 	ReplyToCommand(client, "SourceTV selecting server: %d", iInstance);
 	return Plugin_Handled;
 }
 
 public Action:Cmd_GetSelectedServer(client, args)
 {
-	ReplyToCommand(client, "SourceTV selected server: %d", SourceTV_GetSelectedHLTVServer());
+	ReplyToCommand(client, "SourceTV selected server: %d", SourceTV_GetSelectedServerInstance());
 	return Plugin_Handled;
 }
 
@@ -126,7 +126,7 @@ public Action:Cmd_SendHintMessage(client, args)
 	GetCmdArgString(sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new bool:bSent = SourceTV_BroadcastHintMessage("%s", sMsg);
+	new bool:bSent = SourceTV_BroadcastScreenMessage("%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending hint message (success %d): %s", bSent, sMsg);
 	return Plugin_Handled;
 }
@@ -166,7 +166,7 @@ public Action:Cmd_ForceChaseCameraShot(client, args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "Usage: sm_startrecording <target> <ineye>");
+		ReplyToCommand(client, "Usage: sm_forcechasecam <target> <ineye>");
 		return Plugin_Handled;
 	}
 	

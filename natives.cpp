@@ -36,8 +36,8 @@
 
 extern const sp_nativeinfo_t sourcetv_natives[];
 
-// native SourceTV_GetHLTVServerCount();
-static cell_t Native_GetHLTVServerCount(IPluginContext *pContext, const cell_t *params)
+// native SourceTV_GetServerInstanceCount();
+static cell_t Native_GetServerInstanceCount(IPluginContext *pContext, const cell_t *params)
 {
 #if SOURCE_ENGINE == SE_CSGO
 	return hltvdirector->GetHLTVServerCount();
@@ -46,8 +46,8 @@ static cell_t Native_GetHLTVServerCount(IPluginContext *pContext, const cell_t *
 #endif
 }
 
-// native SourceTV_SelectHLTVServer();
-static cell_t Native_SelectHLTVServer(IPluginContext *pContext, const cell_t *params)
+// native SourceTV_SelectServerInstance();
+static cell_t Native_SelectServerInstance(IPluginContext *pContext, const cell_t *params)
 {
 #if SOURCE_ENGINE == SE_CSGO
 	if (params[1] < 0 || params[1] >= hltvdirector->GetHLTVServerCount())
@@ -69,8 +69,8 @@ static cell_t Native_SelectHLTVServer(IPluginContext *pContext, const cell_t *pa
 	return 0;
 }
 
-// native SourceTV_GetSelectedHLTVServer();
-static cell_t Native_GetSelectedHLTVServer(IPluginContext *pContext, const cell_t *params)
+// native SourceTV_GetSelectedServerInstance();
+static cell_t Native_GetSelectedServerInstance(IPluginContext *pContext, const cell_t *params)
 {
 	if (hltvserver == nullptr)
 		return -1;
@@ -120,6 +120,26 @@ static cell_t Native_GetLocalStats(IPluginContext *pContext, const cell_t *param
 	return 1;
 }
 
+// native bool:SourceTV_GetGlobalStats(&proxies, &slots, &specs);
+static cell_t Native_GetGlobalStats(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	int proxies, slots, specs;
+	hltvserver->GetGlobalStats(proxies, slots, specs);
+
+	cell_t *plProxies, *plSlots, *plSpecs;
+	pContext->LocalToPhysAddr(params[1], &plProxies);
+	pContext->LocalToPhysAddr(params[2], &plSlots);
+	pContext->LocalToPhysAddr(params[3], &plSpecs);
+
+	*plProxies = proxies;
+	*plSlots = slots;
+	*plSpecs = specs;
+	return 1;
+}
+
 // native SourceTV_GetBroadcastTick();
 static cell_t Native_GetBroadcastTick(IPluginContext *pContext, const cell_t *params)
 {
@@ -138,8 +158,8 @@ static cell_t Native_GetDelay(IPluginContext *pContext, const cell_t *params)
 	return sp_ftoc(hltvdirector->GetDelay());
 }
 
-// native bool:SourceTV_BroadcastHintMessage(const String:format[], any:...);
-static cell_t Native_BroadcastHintMessage(IPluginContext *pContext, const cell_t *params)
+// native bool:SourceTV_BroadcastScreenMessage(const String:format[], any:...);
+static cell_t Native_BroadcastScreenMessage(IPluginContext *pContext, const cell_t *params)
 {
 	if (hltvserver == nullptr)
 		return 0;
@@ -579,14 +599,15 @@ static cell_t Native_KickClient(IPluginContext *pContext, const cell_t *params)
 
 const sp_nativeinfo_t sourcetv_natives[] =
 {
-	{ "SourceTV_GetHLTVServerCount", Native_GetHLTVServerCount },
-	{ "SourceTV_SelectHLTVServer", Native_SelectHLTVServer },
-	{ "SourceTV_GetSelectedHLTVServer", Native_GetSelectedHLTVServer },
+	{ "SourceTV_GetServerInstanceCount", Native_GetServerInstanceCount },
+	{ "SourceTV_SelectServerInstance", Native_SelectServerInstance },
+	{ "SourceTV_GetSelectedServerInstance", Native_GetSelectedServerInstance },
 	{ "SourceTV_GetBotIndex", Native_GetBotIndex },
 	{ "SourceTV_GetLocalStats", Native_GetLocalStats },
+	{ "SourceTV_GetGlobalStats", Native_GetGlobalStats },
 	{ "SourceTV_GetBroadcastTick", Native_GetBroadcastTick },
 	{ "SourceTV_GetDelay", Native_GetDelay },
-	{ "SourceTV_BroadcastHintMessage", Native_BroadcastHintMessage },
+	{ "SourceTV_BroadcastScreenMessage", Native_BroadcastScreenMessage },
 	{ "SourceTV_BroadcastConsoleMessage", Native_BroadcastConsoleMessage },
 	{ "SourceTV_GetViewEntity", Native_GetViewEntity },
 	{ "SourceTV_GetViewOrigin", Native_GetViewOrigin },
