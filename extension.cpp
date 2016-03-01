@@ -40,6 +40,7 @@ void *old_host_client = nullptr;
 bool g_HostClientOverridden = false;
 
 IGameEventManager2 *gameevents = nullptr;
+CGlobalVars *gpGlobals;
 
 IBinTools *bintools = nullptr;
 ISDKTools *sdktools = nullptr;
@@ -134,6 +135,8 @@ bool SourceTVManager::SDK_OnMetamodLoad(ISmmAPI *ismm, char *error, size_t maxle
 {
 	GET_V_IFACE_CURRENT(GetServerFactory, hltvdirector, IHLTVDirector, INTERFACEVERSION_HLTVDIRECTOR);
 	GET_V_IFACE_CURRENT(GetEngineFactory, gameevents, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2);
+
+	gpGlobals = ismm->GetCGlobals();
 
 	return true;
 }

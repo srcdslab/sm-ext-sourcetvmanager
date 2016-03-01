@@ -19,7 +19,7 @@
 		}
 		"Offsets"
 		{
-			"BroadcastPrintf"
+			"CBaseServer::BroadcastPrintf"
 			{
 				"windows"	"39"
 				"linux"		"40"
@@ -29,6 +29,24 @@
 			{
 				"windows"	"19600"
 				"linux"	"20496"
+			}
+			
+			"CHLTVDirector::m_iPVSEntity"
+			{
+				"windows"	"32"
+				"linux"	"32"
+			}
+			
+			"CHLTVDirector::m_vPVSOrigin"
+			{
+				"windows"	"36"
+				"linux"	"36"
+			}
+			
+			"CHLTVDirector::m_nNextShotTick"
+			{
+				"windows"	"52"
+				"linux"	"52"
 			}
 		}
 		"Signatures"
@@ -61,7 +79,7 @@
 		}
 		"Offsets"
 		{
-			"BroadcastPrintf"
+			"CBaseServer::BroadcastPrintf"
 			{
 				"windows"	"35"
 				"linux"		"36"
@@ -71,6 +89,24 @@
 			{
 				"windows"	"19192"
 				"linux"	"19424" // -416
+			}
+			
+			"CHLTVDirector::m_iPVSEntity"
+			{
+				"windows"	"16"
+				"linux"	"16"
+			}
+			
+			"CHLTVDirector::m_vPVSOrigin"
+			{
+				"windows"	"20"
+				"linux"	"20"
+			}
+			
+			"CHLTVDirector::m_nNextShotTick"
+			{
+				"windows"	"40"
+				"linux"	"40"
 			}
 		}
 		"Signatures"

@@ -3,6 +3,11 @@
 #endif
 #define _stvmngr_included
 
+// Some guidelines from the SDK about director camera shot durations
+#define MIN_SHOT_LENGTH				4.0  // minimum time of a cut (seconds)
+#define MAX_SHOT_LENGTH				8.0  // maximum time of a cut (seconds)
+#define DEF_SHOT_LENGTH				6.0  // average time of a cut (seconds)
+
 native SourceTV_GetHLTVServerCount();
 native SourceTV_SelectHLTVServer(instance);
 native SourceTV_GetSelectedHLTVServer();
@@ -15,7 +20,9 @@ native bool:SourceTV_BroadcastConsoleMessage(const String:format[], any:...);
 // get current view entity (PVS), 0 if coords are used
 native SourceTV_GetViewEntity();
 // get current PVS origin
-native SourceTV_GetViewCoordinates(Float:view[3]);
+native SourceTV_GetViewOrigin(Float:view[3]);
+native bool:SourceTV_ForceFixedCameraShot(Float:pos[], Float:angle[], iTarget, Float:fov, Float:fDuration = DEF_SHOT_LENGTH);
+native bool:SourceTV_ForceChaseCameraShot(iTarget1, iTarget2, distance, phi, theta, bool:bInEye, Float:fDuration = DEF_SHOT_LENGTH);
 
 native bool:SourceTV_StartRecording(const String:sFilename[]);
 native bool:SourceTV_StopRecording();
@@ -66,7 +73,9 @@ public __ext_stvmngr_SetNTVOptional()
 	MarkNativeAsOptional("SourceTV_BroadcastHintMessage");
 	MarkNativeAsOptional("SourceTV_BroadcastConsoleMessage");
 	MarkNativeAsOptional("SourceTV_GetViewEntity");
-	MarkNativeAsOptional("SourceTV_GetViewCoordinates");
+	MarkNativeAsOptional("SourceTV_GetViewOrigin");
+	MarkNativeAsOptional("SourceTV_ForceFixedCameraShot");
+	MarkNativeAsOptional("SourceTV_ForceChaseCameraShot");
 	MarkNativeAsOptional("SourceTV_StartRecording");
 	MarkNativeAsOptional("SourceTV_StopRecording");
 	MarkNativeAsOptional("SourceTV_IsRecording");

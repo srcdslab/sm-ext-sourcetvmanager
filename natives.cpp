@@ -31,6 +31,9 @@
 
 #include "extension.h"
 
+#define TICK_INTERVAL			(gpGlobals->interval_per_tick)
+#define TIME_TO_TICKS( dt )		( (int)( 0.5f + (float)(dt) / TICK_INTERVAL ) )
+
 extern const sp_nativeinfo_t sourcetv_natives[];
 
 // native SourceTV_GetHLTVServerCount();
@@ -172,7 +175,7 @@ static cell_t Native_BroadcastConsoleMessage(IPluginContext *pContext, const cel
 	if (!pBroadcastPrintf)
 	{
 		int offset = -1;
-		if (!g_pGameConf->GetOffset("BroadcastPrintf", &offset) || offset == -1)
+		if (!g_pGameConf->GetOffset("CBaseServer::BroadcastPrintf", &offset) || offset == -1)
 		{
 			pContext->ReportError("Failed to get CBaseServer::BroadcastPrintf offset.");
 			return 0;
@@ -231,8 +234,8 @@ static cell_t Native_GetViewEntity(IPluginContext *pContext, const cell_t *param
 	return hltvdirector->GetPVSEntity();
 }
 
-// native SourceTV_GetViewCoordinates();
-static cell_t Native_GetViewCoordinates(IPluginContext *pContext, const cell_t *params)
+// native SourceTV_GetViewOrigin();
+static cell_t Native_GetViewOrigin(IPluginContext *pContext, const cell_t *params)
 {
 	Vector pvs = hltvdirector->GetPVSOrigin();
 
@@ -242,6 +245,93 @@ static cell_t Native_GetViewCoordinates(IPluginContext *pContext, const cell_t *
 	addr[1] = sp_ftoc(pvs.y);
 	addr[2] = sp_ftoc(pvs.z);
 	return 0;
+}
+
+// native bool:SourceTV_ForceFixedCameraShot(Float:pos[], Float:angle[], iTarget, Float:fov, Float:fDuration);
+static cell_t Native_ForceFixedCameraShot(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	// Validate entities.
+	if (params[3] != 0 && !gamehelpers->ReferenceToEntity(params[3]))
+	{
+		pContext->ReportError("Invalid target (%d - %d)", gamehelpers->ReferenceToIndex(params[3]), params[3]);
+		return 0;
+	}
+
+	cell_t *pos;
+	pContext->LocalToPhysAddr(params[1], &pos);
+
+	cell_t *angle;
+	pContext->LocalToPhysAddr(params[2], &angle);
+
+	// Update director state like it would do itself.
+	g_HLTVDirectorWrapper.SetPVSEntity(0);
+	Vector vPos(sp_ctof(pos[0]), sp_ctof(pos[1]), sp_ctof(pos[2]));
+	g_HLTVDirectorWrapper.SetPVSOrigin(vPos);
+
+	IGameEvent *shot = gameevents->CreateEvent("hltv_fixed", true);
+	if (!shot)
+		return 0;
+	
+	shot->SetInt("posx", vPos.x);
+	shot->SetInt("posy", vPos.y);
+	shot->SetInt("posz", vPos.z);
+	shot->SetInt("theta", sp_ctof(angle[0]));
+	shot->SetInt("phi", sp_ctof(angle[1]));
+	shot->SetInt("target", params[3] ? gamehelpers->ReferenceToIndex(params[3]) : 0);
+	shot->SetFloat("fov", sp_ctof(params[4]));
+
+	hltvserver->BroadcastEvent(shot);
+	gameevents->FreeEvent(shot);
+
+	// Prevent auto director from changing shots until we allow it to again.
+	g_HLTVDirectorWrapper.SetNextThinkTick(hltvdirector->GetDirectorTick() + TIME_TO_TICKS(sp_ctof(params[5])));
+
+	return 1;
+}
+
+// native bool:SourceTV_ForceChaseCameraShot(iTarget1, iTarget2, distance, phi, theta, bool:bInEye, Float:fDuration);
+static cell_t Native_ForceChaseCameraShot(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	// Validate entities.
+	if (!gamehelpers->ReferenceToEntity(params[1]))
+	{
+		pContext->ReportError("Invalid target1 (%d - %d)", gamehelpers->ReferenceToIndex(params[1]), params[1]);
+		return 0;
+	}
+
+	if (params[2] != 0 && !gamehelpers->ReferenceToEntity(params[2]))
+	{
+		pContext->ReportError("Invalid target2 (%d - %d)", gamehelpers->ReferenceToIndex(params[2]), params[2]);
+		return 0;
+	}
+
+	IGameEvent *shot = gameevents->CreateEvent("hltv_chase", true);
+	if (!shot)
+		return 0;
+
+	shot->SetInt("target1", gamehelpers->ReferenceToIndex(params[1]));
+	shot->SetInt("target2", params[2] ? gamehelpers->ReferenceToIndex(params[2]) : 0);
+	shot->SetInt("distance", params[3]);
+	shot->SetInt("phi", params[4]); // hi/low
+	shot->SetInt("theta", params[5]); // left/right
+	shot->SetInt("ineye", params[6] ? 1 : 0);
+
+	// Update director state
+	g_HLTVDirectorWrapper.SetPVSEntity(gamehelpers->ReferenceToIndex(params[1]));
+
+	hltvserver->BroadcastEvent(shot);
+	gameevents->FreeEvent(shot);
+
+	// Prevent auto director from changing shots until we allow it to again.
+	g_HLTVDirectorWrapper.SetNextThinkTick(hltvdirector->GetDirectorTick() + TIME_TO_TICKS(sp_ctof(params[7])));
+
+	return 1;
 }
 
 // native bool:SourceTV_IsRecording();
@@ -499,7 +589,9 @@ const sp_nativeinfo_t sourcetv_natives[] =
 	{ "SourceTV_BroadcastHintMessage", Native_BroadcastHintMessage },
 	{ "SourceTV_BroadcastConsoleMessage", Native_BroadcastConsoleMessage },
 	{ "SourceTV_GetViewEntity", Native_GetViewEntity },
-	{ "SourceTV_GetViewCoordinates", Native_GetViewCoordinates },
+	{ "SourceTV_GetViewOrigin", Native_GetViewOrigin },
+	{ "SourceTV_ForceFixedCameraShot", Native_ForceFixedCameraShot },
+	{ "SourceTV_ForceChaseCameraShot", Native_ForceChaseCameraShot },
 	{ "SourceTV_StartRecording", Native_StartRecording },
 	{ "SourceTV_StopRecording", Native_StopRecording },
 	{ "SourceTV_IsRecording", Native_IsRecording },

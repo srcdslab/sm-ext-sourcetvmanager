@@ -1,8 +1,8 @@
 /**
  * vim: set ts=4 :
  * =============================================================================
- * SourceMod Sample Extension
- * Copyright (C) 2004-2008 AlliedModders LLC.  All rights reserved.
+ * SourceMod SourceTV Manager Extension
+ * Copyright (C) 2004-2016 AlliedModders LLC.  All rights reserved.
  * =============================================================================
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -40,6 +40,7 @@
 #include "smsdk_ext.h"
 #include <IBinTools.h>
 #include <ISDKTools.h>
+#include "hltvdirectorwrapper.h"
 #include "ihltvdirector.h"
 #include "ihltv.h"
 #include "iserver.h"
@@ -148,6 +149,7 @@ extern ISDKTools *sdktools;
 extern IGameConfig *g_pGameConf;
 
 extern IServer *iserver;
+extern CGlobalVars *gpGlobals;
 extern IGameEventManager2 *gameevents;
 
 extern IHLTVDirector *hltvdirector;

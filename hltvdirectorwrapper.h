@@ -29,35 +29,18 @@
  * Version: $Id$
  */
 
-#ifndef _INCLUDE_SOURCEMOD_EXTENSION_FORWARDS_H_
-#define _INCLUDE_SOURCEMOD_EXTENSION_FORWARDS_H_
+#ifndef _INCLUDE_SOURCEMOD_EXTENSION_HLTVDIRECTOR_H_
+#define _INCLUDE_SOURCEMOD_EXTENSION_HLTVDIRECTOR_H_
 
 #include "extension.h"
 
-class CGameInfo;
-
-class CForwardManager
-{
+class HLTVDirectorWrapper {
 public:
-	void Init();
-	void Shutdown();
-
-	void HookRecorder(IDemoRecorder *recorder);
-	void UnhookRecorder(IDemoRecorder *recorder);
-
-private:
-	void OnStartRecording_Post(const char *filename, bool bContinuously);
-#if SOURCE_ENGINE == SE_CSGO
-	void OnStopRecording_Post(CGameInfo const *info);
-#else
-	void OnStopRecording_Post();
-#endif
-
-private:
-	IForward *m_StartRecordingFwd;
-	IForward *m_StopRecordingFwd;
+	void SetPVSEntity(int index);
+	void SetPVSOrigin(Vector pos);
+	void SetNextThinkTick(int tick);
 };
 
-extern CForwardManager g_pSTVForwards;
+extern HLTVDirectorWrapper g_HLTVDirectorWrapper;
 
-#endif // _INCLUDE_SOURCEMOD_EXTENSION_FORWARDS_H_
+#endif // _INCLUDE_SOURCEMOD_EXTENSION_HLTVDIRECTOR_H_

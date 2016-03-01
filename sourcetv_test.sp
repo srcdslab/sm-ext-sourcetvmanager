@@ -1,17 +1,24 @@
-#undef REQUIRE_EXTENSIONS
+//#undef REQUIRE_EXTENSIONS
 #include "sourcetvmanager"
 
 public OnPluginStart()
 {
+	LoadTranslations("common.phrases");
+
 	RegConsoleCmd("sm_servercount", Cmd_GetServerCount);
 	RegConsoleCmd("sm_selectserver", Cmd_SelectServer);
 	RegConsoleCmd("sm_getselectedserver", Cmd_GetSelectedServer);
 	RegConsoleCmd("sm_getbotindex", Cmd_GetBotIndex);
+	RegConsoleCmd("sm_getbroadcasttick", Cmd_GetBroadcastTick);
 	RegConsoleCmd("sm_localstats", Cmd_Localstats);
 	RegConsoleCmd("sm_getdelay", Cmd_GetDelay);
 	RegConsoleCmd("sm_spectators", Cmd_Spectators);
 	RegConsoleCmd("sm_spechintmsg", Cmd_SendHintMessage);
 	RegConsoleCmd("sm_specmsg", Cmd_SendMessage);
+	RegConsoleCmd("sm_getviewentity", Cmd_GetViewEntity);
+	RegConsoleCmd("sm_getvieworigin", Cmd_GetViewOrigin);
+	RegConsoleCmd("sm_forcechasecam", Cmd_ForceChaseCameraShot);
+	//RegConsoleCmd("sm_forcefixedcam", Cmd_ForceFixedCameraShot);
 	RegConsoleCmd("sm_startrecording", Cmd_StartRecording);
 	RegConsoleCmd("sm_stoprecording", Cmd_StopRecording);
 	RegConsoleCmd("sm_isrecording", Cmd_IsRecording);
@@ -65,6 +72,12 @@ public Action:Cmd_GetSelectedServer(client, args)
 public Action:Cmd_GetBotIndex(client, args)
 {
 	ReplyToCommand(client, "SourceTV bot index: %d", SourceTV_GetBotIndex());
+	return Plugin_Handled;
+}
+
+public Action:Cmd_GetBroadcastTick(client, args)
+{
+	ReplyToCommand(client, "SourceTV broadcast tick: %d", SourceTV_GetBroadcastTick());
 	return Plugin_Handled;
 }
 
@@ -132,6 +145,49 @@ public Action:Cmd_SendMessage(client, args)
 	
 	new bool:bSent = SourceTV_BroadcastConsoleMessage("%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending console message (success %d): %s", bSent, sMsg);
+	return Plugin_Handled;
+}
+
+public Action:Cmd_GetViewEntity(client, args)
+{
+	ReplyToCommand(client, "SourceTV view entity: %d", SourceTV_GetViewEntity());
+	return Plugin_Handled;
+}
+
+public Action:Cmd_GetViewOrigin(client, args)
+{
+	new Float:pos[3];
+	SourceTV_GetViewOrigin(pos);
+	ReplyToCommand(client, "SourceTV view origin: %f %f %f", pos[0], pos[1], pos[2]);
+	return Plugin_Handled;
+}
+
+public Action:Cmd_ForceChaseCameraShot(client, args)
+{
+	if (args < 1)
+	{
+		ReplyToCommand(client, "Usage: sm_startrecording <target> <ineye>");
+		return Plugin_Handled;
+	}
+	
+	new String:sTarget[PLATFORM_MAX_PATH];
+	GetCmdArg(1, sTarget, sizeof(sTarget));
+	StripQuotes(sTarget);
+	new iTarget = FindTarget(client, sTarget, false, false);
+	if (iTarget == -1)
+		return Plugin_Handled;
+	
+	new bool:bInEye;
+	if (args >= 2)
+	{
+		new String:sInEye[16];
+		GetCmdArg(2, sInEye, sizeof(sInEye));
+		StripQuotes(sInEye);
+		bInEye = sInEye[0] == '1';
+	}
+	
+	SourceTV_ForceChaseCameraShot(iTarget, 0, 96, -20, (GetRandomFloat()>0.5)?30:-30, bInEye, 20.0);
+	ReplyToCommand(client, "SourceTV forcing camera shot on %N.", iTarget);
 	return Plugin_Handled;
 }
 
