@@ -79,6 +79,18 @@
 		}
 		"Offsets"
 		{
+			"CNetChan::SendNetMsg"
+			{
+				"windows"	"40"
+				"linux"	"41"
+			}
+			
+			"CBaseClient::m_NetChannel"
+			{
+				"windows"	"192"
+				"linux"	"164"
+			}
+			
 			"CBaseServer::BroadcastPrintf"
 			{
 				"windows"	"35"

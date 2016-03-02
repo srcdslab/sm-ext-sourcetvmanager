@@ -31,6 +31,7 @@
 
 #include "extension.h"
 #include "forwards.h"
+#include "inetmessage.h"
 
 IHLTVDirector *hltvdirector = nullptr;
 IHLTVServer *hltvserver = nullptr;
@@ -47,11 +48,24 @@ ISDKTools *sdktools = nullptr;
 IServer *iserver = nullptr;
 IGameConfig *g_pGameConf = nullptr;
 
+#if SOURCE_ENGINE != SE_CSGO
+bool g_SendNetMsgHooked = false;
+#endif
+
 #if SOURCE_ENGINE == SE_CSGO
 SH_DECL_HOOK1_void(IHLTVDirector, AddHLTVServer, SH_NOATTRIB, 0, IHLTVServer *);
 SH_DECL_HOOK1_void(IHLTVDirector, RemoveHLTVServer, SH_NOATTRIB, 0, IHLTVServer *);
 #else
 SH_DECL_HOOK1_void(IHLTVDirector, SetHLTVServer, SH_NOATTRIB, 0, IHLTVServer *);
+
+// Stuff to print to demo console
+SH_DECL_HOOK0_void_vafmt(IClient, ClientPrintf, SH_NOATTRIB, 0);
+// This should be large enough.
+#define FAKE_VTBL_LENGTH 70
+static void *FakeNetChanVtbl[FAKE_VTBL_LENGTH];
+static void *FakeNetChan = &FakeNetChanVtbl;
+
+SH_DECL_MANUALHOOK3(NetChan_SendNetMsg, 0, 0, 0, bool, INetMessage &, bool, bool);
 #endif
 
 SH_DECL_HOOK1(IClient, ExecuteStringCommand, SH_NOATTRIB, 0, bool, const char *);
@@ -88,6 +102,34 @@ bool SourceTVManager::SDK_OnLoad(char *error, size_t maxlength, bool late)
 	{
 		smutils->LogError(myself, "Failed to find host_client pointer. Server might crash when executing commands on SourceTV bot.");
 	}
+
+#if SOURCE_ENGINE != SE_CSGO
+	int offset;
+	if (g_pGameConf->GetOffset("CNetChan::SendNetMsg", &offset))
+	{
+		if (offset >= FAKE_VTBL_LENGTH)
+		{
+			smutils->LogError(myself, "CNetChan::SendNetMsg offset too big. Need to raise define and recompile. Contact the author.");
+		}
+		else
+		{
+			// This is a hack. Bots don't have a net channel, but ClientPrintf tries to call m_NetChannel->SendNetMsg directly.
+			// CGameClient::SendNetMsg would have redirected it to the hltvserver correctly, but isn't used there..
+			// We craft a fake object with a large enough "vtable" and hook it using sourcehook.
+			// Before a call to ClientPrintf, this fake object is set as CBaseClient::m_NetChannel, so ClientPrintf creates 
+			// the SVC_Print INetMessage and calls our "hooked" m_NetChannel->SendNetMsg function.
+			// In that function we just call CGameClient::SendNetMsg with the given INetMessage to flow it through the same
+			// path as other net messages.
+			SH_MANUALHOOK_RECONFIGURE(NetChan_SendNetMsg, offset, 0, 0);
+			SH_ADD_MANUALHOOK(NetChan_SendNetMsg, &FakeNetChan, SH_MEMBER(this, &SourceTVManager::OnHLTVBotNetChanSendNetMsg), false);
+			g_SendNetMsgHooked = true;
+		}
+	}
+	else
+	{
+		smutils->LogError(myself, "Failed to find CNetChan::SendNetMsg offset. Can't print to demo console.");
+	}
+#endif
 
 	sharesys->AddNatives(myself, sourcetv_natives);
 	sharesys->RegisterLibrary(myself, "sourcetvmanager");
@@ -148,6 +190,13 @@ void SourceTVManager::SDK_OnUnload()
 	SH_REMOVE_HOOK(IHLTVDirector, RemoveHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnRemoveHLTVServer_Post), true);
 #else
 	SH_REMOVE_HOOK(IHLTVDirector, SetHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnSetHLTVServer_Post), true);
+
+	if (g_SendNetMsgHooked)
+	{
+		SH_REMOVE_MANUALHOOK(NetChan_SendNetMsg, &FakeNetChan, SH_MEMBER(this, &SourceTVManager::OnHLTVBotNetChanSendNetMsg), false);
+		g_SendNetMsgHooked = false;
+	}
+
 #endif
 
 	gameconfs->CloseGameConfigFile(g_pGameConf);
@@ -187,6 +236,9 @@ void SourceTVManager::HookSourceTVServer(IHLTVServer *hltv)
 			{
 				SH_ADD_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand), false);
 				SH_ADD_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand_Post), true);
+#if SOURCE_ENGINE != SE_CSGO
+				SH_ADD_HOOK(IClient, ClientPrintf, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotClientPrintf_Post), false);
+#endif
 			}
 		}
 	}
@@ -205,6 +257,9 @@ void SourceTVManager::UnhookSourceTVServer(IHLTVServer *hltv)
 			{
 				SH_REMOVE_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand), false);
 				SH_REMOVE_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotExecuteStringCommand_Post), true);
+#if SOURCE_ENGINE != SE_CSGO
+				SH_REMOVE_HOOK(IClient, ClientPrintf, pClient, SH_MEMBER(this, &SourceTVManager::OnHLTVBotClientPrintf_Post), false);
+#endif
 			}
 		}
 	}
@@ -268,6 +323,45 @@ void SourceTVManager::OnRemoveHLTVServer_Post(IHLTVServer *hltv)
 	RETURN_META(MRES_IGNORED);
 }
 #else
+void SourceTVManager::OnHLTVBotClientPrintf_Post(const char* buf)
+{
+	// Craft our own "NetChan" pointer
+	static int offset = -1;
+	if (!g_pGameConf->GetOffset("CBaseClient::m_NetChannel", &offset) || offset == -1)
+	{
+		smutils->LogError(myself, "Failed to find CBaseClient::m_NetChannel offset. Can't print to demo console.");
+		RETURN_META(MRES_IGNORED);
+	}
+
+	IClient *pClient = META_IFACEPTR(IClient);
+
+	void *pNetChannel = (void *)((char *)pClient + offset);
+	// Set our fake netchannel
+	*(void **)pNetChannel = &FakeNetChan;
+	// Call ClientPrintf again, this time with a "Netchannel" set on the bot.
+	// This will call our own OnHLTVBotNetChanSendNetMsg function
+	SH_CALL(pClient, &IClient::ClientPrintf)("%s", buf);
+	// Set the fake netchannel back to 0.
+	*(void **)pNetChannel = nullptr;
+
+	RETURN_META(MRES_IGNORED);
+}
+
+bool SourceTVManager::OnHLTVBotNetChanSendNetMsg(INetMessage &msg, bool bForceReliable, bool bVoice)
+{
+	IClient *pClient = iserver->GetClient(hltvserver->GetHLTVSlot());
+	if (!pClient)
+		RETURN_META_VALUE(MRES_SUPERCEDE, false);
+
+	// Let the message flow through the intended path like CGameClient::SendNetMsg wants to.
+	bool bRetSent = pClient->SendNetMsg(msg, bForceReliable);
+
+	// It's important to supercede, because there is no original function to call.
+	// (the "vtable" was empty before hooking it)
+	// See FakeNetChan variable at the top.
+	RETURN_META_VALUE(MRES_SUPERCEDE, bRetSent);
+}
+
 void SourceTVManager::OnSetHLTVServer_Post(IHLTVServer *hltv)
 {
 	// Server shut down?
@@ -291,9 +385,6 @@ void SourceTVManager::OnSetHLTVServer_Post(IHLTVServer *hltv)
 bool SourceTVManager::OnHLTVBotExecuteStringCommand(const char *s)
 {
 	if (!hltvserver || !iserver || !host_client)
-		RETURN_META_VALUE(MRES_IGNORED, 0);
-
-	if (*(void **)host_client)
 		RETURN_META_VALUE(MRES_IGNORED, 0);
 
 	IClient *pClient = iserver->GetClient(hltvserver->GetHLTVSlot());

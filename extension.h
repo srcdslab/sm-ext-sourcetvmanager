@@ -48,6 +48,8 @@
 #include "ihltvdemorecorder.h"
 #include "igameevents.h"
 
+class INetMessage;
+
 /**
  * @brief Sample implementation of the SDK Extension.
  * Note: Uncomment one of the pre-defined virtual functions in order to use it.
@@ -133,6 +135,9 @@ private:
 	void OnRemoveHLTVServer_Post(IHLTVServer *hltv);
 #else
 	void OnSetHLTVServer_Post(IHLTVServer *hltv);
+	
+	bool OnHLTVBotNetChanSendNetMsg(INetMessage &msg, bool bForceReliable, bool bVoice);
+	void OnHLTVBotClientPrintf_Post(const char *buf);
 #endif
 	bool OnHLTVBotExecuteStringCommand(const char *s);
 	bool OnHLTVBotExecuteStringCommand_Post(const char *s);
