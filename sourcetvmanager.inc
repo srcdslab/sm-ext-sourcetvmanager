@@ -299,6 +299,45 @@ native SourceTV_KickClient(client, const String:sReason[]);
 
 
 /**
+ * Called when a spectator wants to connect to the SourceTV server.
+ * This is called before any other validation has happened.
+ * Similar to the OnClientPreConnectEx forward in the Connect extension by asherkin.
+ *
+ * @param name		The player name (always empty in CS:GO).
+ * @param password	The password the client used to connect. Can be overwritten.
+ * @param ip		The ip address of the client.
+ * @param rejectReason	Buffer to write the reject reason to, if you want to reject the client from connecting.
+ * @return True to allow the client to connect, false to reject him with the given reason.
+ */
+forward bool:SourceTV_OnSpectatorPreConnect(const String:name[], String:password[255], const String:ip[], String:rejectReason[255]);
+
+/**
+ * Called when a spectator client connected to the SourceTV server.
+ * 
+ * @param client	The spectator client index.
+ * @noreturn
+ */
+forward SourceTV_OnSpectatorConnected(client);
+
+/**
+ * Called when a spectator client is about to disconnect.
+ * 
+ * @param client	The spectator client index.
+ * @param reason	The reason for the disconnect. Can be overwritten.
+ * @noreturn
+ */
+forward SourceTV_OnSpectatorDisconnect(client, String:reason[255]);
+
+/**
+ * Called after a spectator client disconnected.
+ * 
+ * @param client	The spectator client index.
+ * @param reason	The reason for the disconnect.
+ * @noreturn
+ */
+forward SourceTV_OnSpectatorDisconnected(client, const String:reason[255]);
+
+/**
  * Do not edit below this line!
  */
 public Extension:__ext_stvmngr = 

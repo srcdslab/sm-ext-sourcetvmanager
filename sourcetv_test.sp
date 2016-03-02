@@ -7,16 +7,17 @@ public OnPluginStart()
 
 	RegConsoleCmd("sm_servercount", Cmd_GetServerCount);
 	RegConsoleCmd("sm_selectserver", Cmd_SelectServer);
-	RegConsoleCmd("sm_getselectedserver", Cmd_GetSelectedServer);
-	RegConsoleCmd("sm_getbotindex", Cmd_GetBotIndex);
-	RegConsoleCmd("sm_getbroadcasttick", Cmd_GetBroadcastTick);
+	RegConsoleCmd("sm_selectedserver", Cmd_GetSelectedServer);
+	RegConsoleCmd("sm_botindex", Cmd_GetBotIndex);
+	RegConsoleCmd("sm_broadcasttick", Cmd_GetBroadcastTick);
 	RegConsoleCmd("sm_localstats", Cmd_Localstats);
+	RegConsoleCmd("sm_globalstats", Cmd_Globalstats);
 	RegConsoleCmd("sm_getdelay", Cmd_GetDelay);
 	RegConsoleCmd("sm_spectators", Cmd_Spectators);
 	RegConsoleCmd("sm_spechintmsg", Cmd_SendHintMessage);
 	RegConsoleCmd("sm_specmsg", Cmd_SendMessage);
-	RegConsoleCmd("sm_getviewentity", Cmd_GetViewEntity);
-	RegConsoleCmd("sm_getvieworigin", Cmd_GetViewOrigin);
+	RegConsoleCmd("sm_viewentity", Cmd_GetViewEntity);
+	RegConsoleCmd("sm_vieworigin", Cmd_GetViewOrigin);
 	RegConsoleCmd("sm_forcechasecam", Cmd_ForceChaseCameraShot);
 	//RegConsoleCmd("sm_forcefixedcam", Cmd_ForceFixedCameraShot);
 	RegConsoleCmd("sm_startrecording", Cmd_StartRecording);
@@ -38,6 +39,32 @@ public SourceTV_OnStartRecording(instance, const String:filename[])
 public SourceTV_OnStopRecording(instance, const String:filename[], recordingtick)
 {
 	PrintToServer("Stopped recording sourcetv #%d demo to %s (%d ticks)", instance, filename, recordingtick);
+}
+
+public bool:SourceTV_OnSpectatorPreConnect(const String:name[], String:password[255], const String:ip[], String:rejectReason[255])
+{
+	PrintToServer("SourceTV spectator is connecting! Name: %s, pw: %s, ip: %s", name, password, ip);
+	if (StrEqual(password, "nope", false))
+	{
+		strcopy(rejectReason, 255, "Heh, that password sucks.");
+		return false;
+	}
+	return true;
+}
+
+public SourceTV_OnSpectatorConnected(client)
+{
+	PrintToServer("SourceTV client %d connected. (isconnected %d)", client, SourceTV_IsClientConnected(client));
+}
+
+public SourceTV_OnSpectatorDisconnect(client, String:reason[255])
+{
+	PrintToServer("SourceTV client %d is disconnecting (isconnected %d) with reason -> %s.", client, SourceTV_IsClientConnected(client), reason);
+}
+
+public SourceTV_OnSpectatorDisconnected(client, const String:reason[255])
+{
+	PrintToServer("SourceTV client %d disconnected (isconnected %d) with reason -> %s.", client, SourceTV_IsClientConnected(client), reason);
 }
 
 public Action:Cmd_GetServerCount(client, args)
@@ -90,6 +117,18 @@ public Action:Cmd_Localstats(client, args)
 		return Plugin_Handled;
 	}
 	ReplyToCommand(client, "SourceTV local stats: proxies %d - slots %d - specs %d", proxies, slots, specs);
+	return Plugin_Handled;
+}
+
+public Action:Cmd_Globalstats(client, args)
+{
+	new proxies, slots, specs;
+	if (!SourceTV_GetGlobalStats(proxies, slots, specs))
+	{
+		ReplyToCommand(client, "SourceTV global stats: no server selected :(");
+		return Plugin_Handled;
+	}
+	ReplyToCommand(client, "SourceTV global stats: proxies %d - slots %d - specs %d", proxies, slots, specs);
 	return Plugin_Handled;
 }
 

@@ -25,6 +25,18 @@
 				"linux"		"40"
 			}
 			
+			"CHLTVServer::ConnectClient"
+			{
+				"windows"	"54"
+				"linux"	"55"
+			}
+			
+			"CHLTVServer::RejectConnection"
+			{
+				"windows"	"52"
+				"linux"	"53"
+			}
+			
 			"CHLTVServer::m_DemoRecorder"
 			{
 				"windows"	"19600"
@@ -95,6 +107,18 @@
 			{
 				"windows"	"35"
 				"linux"		"36"
+			}
+			
+			"CHLTVServer::ConnectClient"
+			{
+				"windows"	"49"
+				"linux"	"50"
+			}
+			
+			"CHLTVServer::RejectConnection"
+			{
+				"windows"	"47"
+				"linux"	"48"
 			}
 			
 			"CHLTVServer::m_DemoRecorder"

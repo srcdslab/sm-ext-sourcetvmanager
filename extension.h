@@ -47,6 +47,7 @@
 #include "iclient.h"
 #include "ihltvdemorecorder.h"
 #include "igameevents.h"
+#include "inetmessage.h"
 
 class INetMessage;
 

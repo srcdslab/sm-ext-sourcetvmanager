@@ -31,7 +31,6 @@
 
 #include "extension.h"
 #include "forwards.h"
-#include "inetmessage.h"
 
 IHLTVDirector *hltvdirector = nullptr;
 IHLTVServer *hltvserver = nullptr;
@@ -227,6 +226,7 @@ void SourceTVManager::HookSourceTVServer(IHLTVServer *hltv)
 {
 	if (hltv != nullptr)
 	{
+		g_pSTVForwards.HookServer(hltv->GetBaseServer());
 		g_pSTVForwards.HookRecorder(GetDemoRecorderPtr(hltv));
 
 		if (iserver)
@@ -248,6 +248,7 @@ void SourceTVManager::UnhookSourceTVServer(IHLTVServer *hltv)
 {
 	if (hltv != nullptr)
 	{
+		g_pSTVForwards.UnhookServer(hltv->GetBaseServer());
 		g_pSTVForwards.UnhookRecorder(GetDemoRecorderPtr(hltv));
 
 		if (iserver)
