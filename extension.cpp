@@ -291,16 +291,31 @@ void SourceTVManager::SelectSourceTVServer(IHLTVServer *hltv)
 IDemoRecorder *SourceTVManager::GetDemoRecorderPtr(IHLTVServer *hltv)
 {
 	static int offset = -1;
-	if (offset == -1 && !g_pGameConf->GetOffset("CHLTVServer::m_DemoRecorder", &offset))
+	if (offset == -1)
 	{
-		smutils->LogError(myself, "Failed to get CHLTVServer::m_DemoRecorder offset.");
-		return nullptr;
+		void *addr;
+		if (!g_pGameConf->GetAddress("CHLTVServer::m_DemoRecorder", &addr))
+		{
+			smutils->LogError(myself, "Failed to get CHLTVServer::m_DemoRecorder offset.");
+			return nullptr;
+		}
+
+		*(int **)&offset = (int *)addr;
 	}
 
 	if (hltv)
+	{
+#if SOURCE_ENGINE == SE_CSGO
 		return (IDemoRecorder *)((intptr_t)hltv + offset);
+#else
+		IServer *baseServer = hltv->GetBaseServer();
+		return (IDemoRecorder *)((intptr_t)baseServer + offset);
+#endif
+	}
 	else
+	{
 		return nullptr;
+	}
 }
 
 #if SOURCE_ENGINE == SE_CSGO
