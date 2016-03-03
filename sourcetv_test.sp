@@ -15,6 +15,8 @@ public OnPluginStart()
 	RegConsoleCmd("sm_getdelay", Cmd_GetDelay);
 	RegConsoleCmd("sm_spectators", Cmd_Spectators);
 	RegConsoleCmd("sm_spechintmsg", Cmd_SendHintMessage);
+	RegConsoleCmd("sm_specchat", Cmd_SendChatMessage);
+	RegConsoleCmd("sm_specchatlocal", Cmd_SendChatMessageLocal);
 	RegConsoleCmd("sm_specmsg", Cmd_SendMessage);
 	RegConsoleCmd("sm_viewentity", Cmd_GetViewEntity);
 	RegConsoleCmd("sm_vieworigin", Cmd_GetViewOrigin);
@@ -166,7 +168,7 @@ public Action:Cmd_SendHintMessage(client, args)
 	GetCmdArgString(sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new bool:bSent = SourceTV_BroadcastScreenMessage("%s", sMsg);
+	new bool:bSent = SourceTV_BroadcastScreenMessage(false, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending hint message (success %d): %s", bSent, sMsg);
 	return Plugin_Handled;
 }
@@ -185,6 +187,40 @@ public Action:Cmd_SendMessage(client, args)
 	
 	new bool:bSent = SourceTV_BroadcastConsoleMessage("%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending console message (success %d): %s", bSent, sMsg);
+	return Plugin_Handled;
+}
+
+public Action:Cmd_SendChatMessage(client, args)
+{
+	if (args < 1)
+	{
+		ReplyToCommand(client, "Usage: sm_specchat <message>");
+		return Plugin_Handled;
+	}
+	
+	new String:sMsg[128];
+	GetCmdArgString(sMsg, sizeof(sMsg));
+	StripQuotes(sMsg);
+	
+	new bool:bSent = SourceTV_BroadcastChatMessage(false, "%s", sMsg);
+	ReplyToCommand(client, "SourceTV sending chat message to all spectators (including relays) (success %d): %s", bSent, sMsg);
+	return Plugin_Handled;
+}
+
+public Action:Cmd_SendChatMessageLocal(client, args)
+{
+	if (args < 1)
+	{
+		ReplyToCommand(client, "Usage: sm_specchatlocal <message>");
+		return Plugin_Handled;
+	}
+	
+	new String:sMsg[128];
+	GetCmdArgString(sMsg, sizeof(sMsg));
+	StripQuotes(sMsg);
+	
+	new bool:bSent = SourceTV_BroadcastChatMessage(true, "%s", sMsg);
+	ReplyToCommand(client, "SourceTV sending chat message to local spectators (success %d): %s", bSent, sMsg);
 	return Plugin_Handled;
 }
 

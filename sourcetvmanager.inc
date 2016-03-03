@@ -92,11 +92,12 @@ native Float:SourceTV_GetDelay();
  * Print a center message to all SourceTV spectators for ~2 seconds.
  * Like the tv_msg command.
  *
+ * @param bLocalOnly	Send only to directly connected spectators or proxies as well?
  * @param format	The format string.
  * @param ...	Variable number of format string arguments.
  * @return	True if message was sent, false otherwise.
  */
-native bool:SourceTV_BroadcastScreenMessage(const String:format[], any:...);
+native bool:SourceTV_BroadcastScreenMessage(bool:bLocalOnly, const String:format[], any:...);
 
 /**
  * Prints text to the console of all connected SourceTV spectators.
@@ -107,7 +108,15 @@ native bool:SourceTV_BroadcastScreenMessage(const String:format[], any:...);
  */
 native bool:SourceTV_BroadcastConsoleMessage(const String:format[], any:...);
 
-
+/**
+ * Print a chat message to all SourceTV spectators.
+ *
+ * @param bLocalOnly	Send only to directly connected spectators or proxies as well?
+ * @param format	The format string.
+ * @param ...	Variable number of format string arguments.
+ * @return	True if message was sent, false otherwise.
+ */
+native bool:SourceTV_BroadcastChatMessage(bool:bLocalOnly, const String:format[], any:...);
 
 
 /********************************************************************************
@@ -393,6 +402,7 @@ public __ext_stvmngr_SetNTVOptional()
 	MarkNativeAsOptional("SourceTV_GetDelay");
 	MarkNativeAsOptional("SourceTV_BroadcastScreenMessage");
 	MarkNativeAsOptional("SourceTV_BroadcastConsoleMessage");
+	MarkNativeAsOptional("SourceTV_BroadcastChatMessage");
 	MarkNativeAsOptional("SourceTV_GetViewEntity");
 	MarkNativeAsOptional("SourceTV_GetViewOrigin");
 	MarkNativeAsOptional("SourceTV_ForceFixedCameraShot");
@@ -408,6 +418,8 @@ public __ext_stvmngr_SetNTVOptional()
 	MarkNativeAsOptional("SourceTV_GetClientCount");
 	MarkNativeAsOptional("SourceTV_IsClientConnected");
 	MarkNativeAsOptional("SourceTV_GetSpectatorName");
+	MarkNativeAsOptional("SourceTV_GetSpectatorIP");
+	MarkNativeAsOptional("SourceTV_GetSpectatorPassword");
 	MarkNativeAsOptional("SourceTV_KickClient");
 }
 #endif

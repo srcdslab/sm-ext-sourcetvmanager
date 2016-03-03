@@ -70,6 +70,14 @@
 				// ping(CCommand const&) "Client ping times:\n"
 				"windows" "\x55\x8B\xEC\x83\xE4\xC0\x83\xEC\x34\x83\x3D\x2A\x2A\x2A\x2A\x01\x53\x56\x57\x75\x2A"
 			}
+			
+			"CHLTVServer::BroadcastEventLocal"
+			{
+				"library"	"engine"
+				"linux"	"@_ZN11CHLTVServer19BroadcastEventLocalEP10IGameEventb"
+				// "SourceTV broadcast local event: %s\n"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x4C\x53\x8B\xD9\xC7\x45\xB4\x2A\x2A\x2A\x2A\x56\x8D"
+			}
 		}
 	}
 	"cstrike"
@@ -153,6 +161,14 @@
 				"linux"	"@host_client"
 				// ping(CCommand const&) "Client ping times:\n"
 				"windows" "\x55\x8B\xEC\x51\x83\x3D\x2A\x2A\x2A\x2A\x01\x75\x2A"
+			}
+			
+			"CHLTVServer::BroadcastEventLocal"
+			{
+				"library"	"engine"
+				"linux"	"@_ZN11CHLTVServer19BroadcastEventLocalEP10IGameEventb"
+				// "SourceTV broadcast local event: %s\n"
+				"windows"	"\x55\x8B\xEC\x81\xEC\x44\x04\x00\x00\x53"
 			}
 		}
 	}

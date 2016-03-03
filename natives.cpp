@@ -158,7 +158,48 @@ static cell_t Native_GetDelay(IPluginContext *pContext, const cell_t *params)
 	return sp_ftoc(hltvdirector->GetDelay());
 }
 
-// native bool:SourceTV_BroadcastScreenMessage(const String:format[], any:...);
+static bool BroadcastEventLocal(IHLTVServer *server, IGameEvent *event, bool bReliable)
+{
+	static ICallWrapper *pBroadcastEventLocal = nullptr;
+
+	if (!pBroadcastEventLocal)
+	{
+		void *addr = nullptr;
+		if (!g_pGameConf->GetMemSig("CHLTVServer::BroadcastEventLocal", &addr) || !addr)
+		{
+			smutils->LogError(myself, "Failed to get CHLTVServer::BroadcastEventLocal signature.");
+			return false;
+		}
+
+		PassInfo pass[2];
+		pass[0].flags = PASSFLAG_BYVAL;
+		pass[0].type = PassType_Basic;
+		pass[0].size = sizeof(IGameEvent *);
+		pass[1].flags = PASSFLAG_BYVAL;
+		pass[1].type = PassType_Basic;
+		pass[1].size = sizeof(bool);
+
+		pBroadcastEventLocal = bintools->CreateCall(addr, CallConv_ThisCall, NULL, pass, 2);
+	}
+
+	if (pBroadcastEventLocal)
+	{
+		unsigned char vstk[sizeof(void *) + sizeof(IGameEvent *) + sizeof(bool)];
+		unsigned char *vptr = vstk;
+
+		*(void **)vptr = (void *)server;
+		vptr += sizeof(void *);
+		*(IGameEvent **)vptr = event;
+		vptr += sizeof(char *);
+		*(bool *)vptr = bReliable;
+
+		pBroadcastEventLocal->Execute(vstk, NULL);
+		return true;
+	}
+	return false;
+}
+
+// native bool:SourceTV_BroadcastScreenMessage(bool:bLocalOnly, const String:format[], any:...);
 static cell_t Native_BroadcastScreenMessage(IPluginContext *pContext, const cell_t *params)
 {
 	if (hltvserver == nullptr)
@@ -168,7 +209,7 @@ static cell_t Native_BroadcastScreenMessage(IPluginContext *pContext, const cell
 	size_t len;
 	{
 		DetectExceptions eh(pContext);
-		len = smutils->FormatString(buffer, sizeof(buffer), pContext, params, 1);
+		len = smutils->FormatString(buffer, sizeof(buffer), pContext, params, 2);
 		if (eh.HasException())
 			return 0;
 	}
@@ -178,10 +219,17 @@ static cell_t Native_BroadcastScreenMessage(IPluginContext *pContext, const cell
 		return 0;
 
 	msg->SetString("text", buffer);
-	hltvserver->BroadcastEvent(msg);
+
+	int ret = 1;
+	bool bLocalOnly = params[1] != 0;
+	if (bLocalOnly)
+		hltvserver->BroadcastEvent(msg);
+	else
+		ret = BroadcastEventLocal(hltvserver, msg, false);
+
 	gameevents->FreeEvent(msg);
 
-	return 1;
+	return ret;
 }
 
 // native bool:SourceTV_BroadcastConsoleMessage(const String:format[], any:...);
@@ -248,6 +296,39 @@ static cell_t Native_BroadcastConsoleMessage(IPluginContext *pContext, const cel
 	}
 
 	return 1;
+}
+
+// native bool:SourceTV_BroadcastChatMessage(bool:bLocalOnly, const String:format[], any:...);
+static cell_t Native_BroadcastChatMessage(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	char buffer[1024];
+	size_t len;
+	{
+		DetectExceptions eh(pContext);
+		len = smutils->FormatString(buffer, sizeof(buffer), pContext, params, 2);
+		if (eh.HasException())
+			return 0;
+	}
+
+	IGameEvent *msg = gameevents->CreateEvent("hltv_chat", true);
+	if (!msg)
+		return 0;
+
+	msg->SetString("text", buffer);
+
+	int ret = 1;
+	bool bLocalOnly = params[1] != 0;
+	if (bLocalOnly)
+		hltvserver->BroadcastEvent(msg);
+	else
+		ret = BroadcastEventLocal(hltvserver, msg, false);
+
+	gameevents->FreeEvent(msg);
+
+	return ret;
 }
 
 // native SourceTV_GetViewEntity();
@@ -659,6 +740,7 @@ const sp_nativeinfo_t sourcetv_natives[] =
 	{ "SourceTV_GetDelay", Native_GetDelay },
 	{ "SourceTV_BroadcastScreenMessage", Native_BroadcastScreenMessage },
 	{ "SourceTV_BroadcastConsoleMessage", Native_BroadcastConsoleMessage },
+	{ "SourceTV_BroadcastChatMessage", Native_BroadcastChatMessage },
 	{ "SourceTV_GetViewEntity", Native_GetViewEntity },
 	{ "SourceTV_GetViewOrigin", Native_GetViewOrigin },
 	{ "SourceTV_ForceFixedCameraShot", Native_ForceFixedCameraShot },
