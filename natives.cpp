@@ -271,15 +271,12 @@ static cell_t Native_BroadcastConsoleMessage(IPluginContext *pContext, const cel
 	size_t len;
 	{
 		DetectExceptions eh(pContext);
-		len = smutils->FormatString(buffer, sizeof(buffer) - 2, pContext, params, 1);
+		len = smutils->FormatString(buffer, sizeof(buffer), pContext, params, 1);
 		if (eh.HasException())
 			return 0;
 	}
 
-	buffer[len++] = '\n';
-	buffer[len] = '\0';
-
-	static char fmt[] = "%s";
+	static char fmt[] = "%s\n";
 
 	if (pBroadcastPrintf)
 	{
@@ -578,7 +575,7 @@ static cell_t Native_PrintToDemoConsole(IPluginContext *pContext, const cell_t *
 			return 0;
 	}
 
-	pClient->ClientPrintf("%s", buffer);
+	pClient->ClientPrintf("%s\n", buffer);
 
 	return 1;
 }
