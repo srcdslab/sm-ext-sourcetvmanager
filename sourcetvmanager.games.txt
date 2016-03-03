@@ -43,6 +43,12 @@
 				"linux"	"60"
 			}
 			
+			"CBaseClient::ActivatePlayer"
+			{
+				"windows"	"27"
+				"linux"	"65"
+			}
+			
 			"CHLTVServer::m_DemoRecorder"
 			{
 				"windows"	"19600"
@@ -139,6 +145,12 @@
 			{
 				"windows"	"54"
 				"linux"	"55"
+			}
+			
+			"CBaseClient::ActivatePlayer"
+			{
+				"windows"	"16"
+				"linux"	"56"
 			}
 			
 			"CHLTVServer::m_DemoRecorder"

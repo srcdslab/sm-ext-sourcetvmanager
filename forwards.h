@@ -84,6 +84,7 @@ private:
 	IClient *OnSpectatorConnect(netadr_t &address, int nProtocol, int iChallenge, int iClientChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie);
 #endif
 	void OnSpectatorDisconnect(const char *reason);
+	void OnSpectatorPutInServer();
 
 	int OnGetChallengeType(const netadr_t &address);
 
@@ -94,9 +95,11 @@ private:
 	IForward *m_SpectatorConnectedFwd;
 	IForward *m_SpectatorDisconnectFwd;
 	IForward *m_SpectatorDisconnectedFwd;
+	IForward *m_SpectatorPutInServerFwd;
 
 	bool m_bHasClientConnectOffset = false;
 	bool m_bHasGetChallengeTypeOffset = false;
+	bool m_bHasActivatePlayerOffset = false;
 };
 
 extern CForwardManager g_pSTVForwards;

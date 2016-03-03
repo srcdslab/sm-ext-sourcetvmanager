@@ -48,6 +48,7 @@ SH_DECL_HOOK1_void(IClient, Disconnect, SH_NOATTRIB, 0, const char *);
 SH_DECL_MANUALHOOK9(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, netadr_t &, int, int, int, int, const char *, const char *, const char *, int);
 SH_DECL_HOOK0_void_vafmt(IClient, Disconnect, SH_NOATTRIB, 0);
 #endif
+SH_DECL_MANUALHOOK0_void(CBaseClient_ActivatePlayer, 0, 0, 0);
 
 SH_DECL_MANUALHOOK1(CHLTVServer_GetChallengeType, 0, 0, 0, int, const netadr_t &);
 
@@ -74,12 +75,23 @@ void CForwardManager::Init()
 		m_bHasGetChallengeTypeOffset = true;
 	}
 
+	if (!g_pGameConf->GetOffset("CBaseClient::ActivatePlayer", &offset) || offset == -1)
+	{
+		smutils->LogError(myself, "Failed to get CBaseClient::ActivatePlayer offset.");
+	}
+	else
+	{
+		SH_MANUALHOOK_RECONFIGURE(CBaseClient_ActivatePlayer, offset, 0, 0);
+		m_bHasActivatePlayerOffset = true;
+	}
+
 	m_StartRecordingFwd = forwards->CreateForward("SourceTV_OnStartRecording", ET_Ignore, 2, NULL, Param_Cell, Param_String);
 	m_StopRecordingFwd = forwards->CreateForward("SourceTV_OnStopRecording", ET_Ignore, 3, NULL, Param_Cell, Param_String, Param_Cell);
 	m_SpectatorPreConnectFwd = forwards->CreateForward("SourceTV_OnSpectatorPreConnect", ET_LowEvent, 4, NULL, Param_String, Param_String, Param_String, Param_String);
 	m_SpectatorConnectedFwd = forwards->CreateForward("SourceTV_OnSpectatorConnected", ET_Ignore, 1, NULL, Param_Cell);
 	m_SpectatorDisconnectFwd = forwards->CreateForward("SourceTV_OnSpectatorDisconnect", ET_Ignore, 2, NULL, Param_Cell, Param_String);
 	m_SpectatorDisconnectedFwd = forwards->CreateForward("SourceTV_OnSpectatorDisconnected", ET_Ignore, 2, NULL, Param_Cell, Param_String);
+	m_SpectatorPutInServerFwd = forwards->CreateForward("SourceTV_OnSpectatorPutInServer", ET_Ignore, 1, NULL, Param_Cell);
 }
 
 void CForwardManager::Shutdown()
@@ -90,6 +102,7 @@ void CForwardManager::Shutdown()
 	forwards->ReleaseForward(m_SpectatorConnectedFwd);
 	forwards->ReleaseForward(m_SpectatorDisconnectFwd);
 	forwards->ReleaseForward(m_SpectatorDisconnectedFwd);
+	forwards->ReleaseForward(m_SpectatorPutInServerFwd);
 }
 
 void CForwardManager::HookRecorder(IDemoRecorder *recorder)
@@ -145,11 +158,21 @@ void CForwardManager::UnhookServer(IServer *server)
 
 void CForwardManager::HookClient(IClient *client)
 {
+	if (m_bHasActivatePlayerOffset)
+	{
+		void *pGameClient = (void *)((intptr_t)client - 4);
+		SH_ADD_MANUALHOOK(CBaseClient_ActivatePlayer, pGameClient, SH_MEMBER(this, &CForwardManager::OnSpectatorPutInServer), true);
+	}
 	SH_ADD_HOOK(IClient, Disconnect, client, SH_MEMBER(this, &CForwardManager::OnSpectatorDisconnect), false);
 }
 
 void CForwardManager::UnhookClient(IClient *client)
 {
+	if (m_bHasActivatePlayerOffset)
+	{
+		void *pGameClient = (void *)((intptr_t)client - 4);
+		SH_REMOVE_MANUALHOOK(CBaseClient_ActivatePlayer, pGameClient, SH_MEMBER(this, &CForwardManager::OnSpectatorPutInServer), true);
+	}
 	SH_REMOVE_HOOK(IClient, Disconnect, client, SH_MEMBER(this, &CForwardManager::OnSpectatorDisconnect), false);
 }
 
@@ -384,6 +407,21 @@ void CForwardManager::OnSpectatorDisconnect(const char *reason)
 	m_SpectatorDisconnectedFwd->Execute();
 
 	RETURN_META(MRES_SUPERCEDE);
+}
+
+void CForwardManager::OnSpectatorPutInServer()
+{
+	void *pGameClient = META_IFACEPTR(void);
+	if (!pGameClient)
+		RETURN_META(MRES_IGNORED);
+
+	// The IClient vtable is + 4 from the CBaseClient vtable due to multiple inheritance.
+	IClient *client = (IClient *)((intptr_t)pGameClient + 4);
+
+	m_SpectatorPutInServerFwd->PushCell(client->GetPlayerSlot() + 1);
+	m_SpectatorPutInServerFwd->Execute();
+
+	RETURN_META(MRES_IGNORED);
 }
 
 void CForwardManager::OnStartRecording_Post(const char *filename, bool bContinuously)

@@ -59,6 +59,11 @@ public SourceTV_OnSpectatorConnected(client)
 	PrintToServer("SourceTV client %d connected. (isconnected %d)", client, SourceTV_IsClientConnected(client));
 }
 
+public SourceTV_OnSpectatorPutInServer(client)
+{
+	PrintToServer("SourceTV client %d put in server.", client);
+}
+
 public SourceTV_OnSpectatorDisconnect(client, String:reason[255])
 {
 	PrintToServer("SourceTV client %d is disconnecting (isconnected %d) with reason -> %s.", client, SourceTV_IsClientConnected(client), reason);

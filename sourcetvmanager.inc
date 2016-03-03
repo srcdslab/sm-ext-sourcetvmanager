@@ -371,6 +371,14 @@ forward SourceTV_OnSpectatorDisconnect(client, String:reason[255]);
 forward SourceTV_OnSpectatorDisconnected(client, const String:reason[255]);
 
 /**
+ * Called when a spectator client is entering the game.
+ * 
+ * @param client	The spectator client index.
+ * @noreturn
+ */
+forward SourceTV_OnSpectatorPutInServer(client);
+
+/**
  * Do not edit below this line!
  */
 public Extension:__ext_stvmngr = 
