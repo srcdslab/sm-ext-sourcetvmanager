@@ -31,6 +31,7 @@
 
 #include "extension.h"
 #include "forwards.h"
+#include "natives.h"
 
 IHLTVDirector *hltvdirector = nullptr;
 IHLTVServer *hltvserver = nullptr;
@@ -152,6 +153,7 @@ void SourceTVManager::SDK_OnAllLoaded()
 	SM_GET_LATE_IFACE(SDKTOOLS, sdktools);
 
 	g_pSTVForwards.Init();
+	SetupNativeCalls();
 
 	iserver = sdktools->GetIServer();
 	if (!iserver)
@@ -396,6 +398,16 @@ void SourceTVManager::OnSetHLTVServer_Post(IHLTVServer *hltv)
 }
 #endif
 
+
+// When bots issue a command that would print stuff to their console, 
+// the server might crash, because ExecuteStringCommand doesn't set the 
+// global host_client pointer to the client on whom the command is run.
+// Host_Client_Printf blatantly tries to call host_client->ClientPrintf
+// while the pointer might point to some other player or garbage.
+// This leads to e.g. the output of the "status" command not being 
+// recorded in the SourceTV demo.
+// The approach here is to set host_client correctly for the SourceTV
+// bot and reset it to the old value after command execution.
 bool SourceTVManager::OnHLTVBotExecuteStringCommand(const char *s)
 {
 	if (!hltvserver || !iserver || !host_client)

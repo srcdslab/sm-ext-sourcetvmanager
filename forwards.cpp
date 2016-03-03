@@ -43,9 +43,11 @@ SH_DECL_HOOK0_void(IDemoRecorder, StopRecording, SH_NOATTRIB, 0)
 
 #if SOURCE_ENGINE == SE_CSGO
 SH_DECL_MANUALHOOK13(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, const netadr_t &, int, int, int, const char *, const char *, const char *, int, CUtlVector<NetMsg_SplitPlayerConnect *> &, bool, CrossPlayPlatform_t, const unsigned char *, int);
+SH_DECL_MANUALHOOK1_void_vafmt(CHLTVServer_RejectConnection, 0, 0, 0, const netadr_t &);
 SH_DECL_HOOK1_void(IClient, Disconnect, SH_NOATTRIB, 0, const char *);
 #else
 SH_DECL_MANUALHOOK9(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, netadr_t &, int, int, int, int, const char *, const char *, const char *, int);
+SH_DECL_MANUALHOOK3_void(CHLTVServer_RejectConnection, 0, 0, 0, const netadr_t &, int, const char *);
 SH_DECL_HOOK0_void_vafmt(IClient, Disconnect, SH_NOATTRIB, 0);
 #endif
 SH_DECL_MANUALHOOK0_void(CBaseClient_ActivatePlayer, 0, 0, 0);
@@ -63,6 +65,16 @@ void CForwardManager::Init()
 	{
 		SH_MANUALHOOK_RECONFIGURE(CHLTVServer_ConnectClient, offset, 0, 0);
 		m_bHasClientConnectOffset = true;
+	}
+
+	if (!g_pGameConf->GetOffset("CHLTVServer::RejectConnection", &offset) || offset == -1)
+	{
+		smutils->LogError(myself, "Failed to get CHLTVServer::RejectConnection offset.");
+	}
+	else
+	{
+		SH_MANUALHOOK_RECONFIGURE(CHLTVServer_RejectConnection, offset, 0, 0);
+		m_bHasRejectConnectionOffset = true;
 	}
 
 	if (!g_pGameConf->GetOffset("CHLTVServer::GetChallengeType", &offset) || offset == -1)
@@ -177,59 +189,6 @@ void CForwardManager::UnhookClient(IClient *client)
 }
 
 #if SOURCE_ENGINE == SE_CSGO
-// CBaseServer::RejectConnection(ns_address const&, char const*, ...)
-static void RejectConnection(IServer *server, const netadr_t &address, const char *pchReason)
-{
-	static ICallWrapper *pRejectConnection = nullptr;
-
-	if (!pRejectConnection)
-	{
-		int offset = -1;
-		if (!g_pGameConf->GetOffset("CHLTVServer::RejectConnection", &offset) || offset == -1)
-		{
-			smutils->LogError(myself, "Failed to get CHLTVServer::RejectConnection offset.");
-			return;
-		}
-
-		PassInfo pass[4];
-		pass[0].flags = PASSFLAG_BYVAL;
-		pass[0].type = PassType_Basic;
-		pass[0].size = sizeof(void *);
-		pass[1].flags = PASSFLAG_BYVAL;
-		pass[1].type = PassType_Basic;
-		pass[1].size = sizeof(void *);
-		pass[2].flags = PASSFLAG_BYVAL;
-		pass[2].type = PassType_Basic;
-		pass[2].size = sizeof(char *);
-		pass[3].flags = PASSFLAG_BYVAL;
-		pass[3].type = PassType_Basic;
-		pass[3].size = sizeof(char *);
-
-		void **vtable = *(void ***)server;
-		void *func = vtable[offset];
-
-		pRejectConnection = bintools->CreateCall(func, CallConv_Cdecl, NULL, pass, 4);
-	}
-
-	static char fmt[] = "%s";
-
-	if (pRejectConnection)
-	{
-		unsigned char vstk[sizeof(void *) * 2 + sizeof(char *) * 2];
-		unsigned char *vptr = vstk;
-
-		*(void **)vptr = (void *)server;
-		vptr += sizeof(void *);
-		*(void **)vptr = (void *)&address;
-		vptr += sizeof(void *);
-		*(char **)vptr = fmt;
-		vptr += sizeof(char *);
-		*(const char **)vptr = pchReason;
-
-		pRejectConnection->Execute(vstk, NULL);
-	}
-}
-
 static bool ExtractPlayerName(CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, char *name, int maxlen)
 {
 	for (int i = 0; i < pSplitPlayerConnectVector.Count(); i++)
@@ -253,50 +212,6 @@ static bool ExtractPlayerName(CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPla
 		}
 	}
 	return false;
-}
-#else
-static void RejectConnection(IServer *server, netadr_t &address, int iClientChallenge, char *pchReason)
-{
-	static ICallWrapper *pRejectConnection = nullptr;
-
-	if (!pRejectConnection)
-	{
-		int offset = -1;
-		if (!g_pGameConf->GetOffset("CHLTVServer::RejectConnection", &offset) || offset == -1)
-		{
-			smutils->LogError(myself, "Failed to get CHLTVServer::RejectConnection offset.");
-			return;
-		}
-
-		PassInfo pass[3];
-		pass[0].flags = PASSFLAG_BYVAL;
-		pass[0].type = PassType_Basic;
-		pass[0].size = sizeof(netadr_t *);
-		pass[1].flags = PASSFLAG_BYVAL;
-		pass[1].type = PassType_Basic;
-		pass[1].size = sizeof(int);
-		pass[2].flags = PASSFLAG_BYVAL;
-		pass[2].type = PassType_Basic;
-		pass[2].size = sizeof(char *);
-
-		pRejectConnection = bintools->CreateVCall(offset, 0, 0, NULL, pass, 3);
-	}
-
-	if (pRejectConnection)
-	{
-		unsigned char vstk[sizeof(void *) + sizeof(netadr_t *) + sizeof(int) + sizeof(char *)];
-		unsigned char *vptr = vstk;
-
-		*(void **)vptr = (void *)server;
-		vptr += sizeof(void *);
-		*(netadr_t **)vptr = &address;
-		vptr += sizeof(netadr_t *);
-		*(int *)vptr = iClientChallenge;
-		vptr += sizeof(int);
-		*(char **)vptr = pchReason;
-
-		pRejectConnection->Execute(vstk, NULL);
-	}
 }
 #endif
 
@@ -340,11 +255,14 @@ IClient *CForwardManager::OnSpectatorConnect(netadr_t & address, int nProtocol, 
 	IServer *server = META_IFACEPTR(IServer);
 	if (retVal == 0)
 	{
+		if (m_bHasRejectConnectionOffset)
+		{
 #if SOURCE_ENGINE == SE_CSGO
-		RejectConnection(server, address, rejectReason);
+			SH_MCALL(server, CHLTVServer_RejectConnection)(address, rejectReason);
 #else
-		RejectConnection(server, address, iClientChallenge, rejectReason);
+			SH_MCALL(server, CHLTVServer_RejectConnection)(address, iClientChallenge, rejectReason);
 #endif
+		}
 		RETURN_META_VALUE(MRES_SUPERCEDE, nullptr);
 	}
 

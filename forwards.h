@@ -98,6 +98,7 @@ private:
 	IForward *m_SpectatorPutInServerFwd;
 
 	bool m_bHasClientConnectOffset = false;
+	bool m_bHasRejectConnectionOffset = false;
 	bool m_bHasGetChallengeTypeOffset = false;
 	bool m_bHasActivatePlayerOffset = false;
 };

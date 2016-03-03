@@ -30,11 +30,30 @@
 */
 
 #include "extension.h"
+#include "natives.h"
 
 #define TICK_INTERVAL			(gpGlobals->interval_per_tick)
 #define TIME_TO_TICKS( dt )		( (int)( 0.5f + (float)(dt) / TICK_INTERVAL ) )
 
 extern const sp_nativeinfo_t sourcetv_natives[];
+
+SH_DECL_MANUALHOOK0_void_vafmt(CBaseServer_BroadcastPrintf, 0, 0, 0);
+
+bool g_bHasClientPrintfOffset = false;
+
+void SetupNativeCalls()
+{
+	int offset = -1;
+	if (!g_pGameConf->GetOffset("CBaseServer::BroadcastPrintf", &offset) || offset == -1)
+	{
+		smutils->LogError(myself, "Failed to get CBaseServer::BroadcastPrintf offset.");
+	}
+	else
+	{
+		SH_MANUALHOOK_RECONFIGURE(CBaseServer_BroadcastPrintf, offset, 0, 0);
+		g_bHasClientPrintfOffset = true;
+	}
+}
 
 // native SourceTV_GetServerInstanceCount();
 static cell_t Native_GetServerInstanceCount(IPluginContext *pContext, const cell_t *params)
@@ -238,34 +257,8 @@ static cell_t Native_BroadcastConsoleMessage(IPluginContext *pContext, const cel
 	if (hltvserver == nullptr)
 		return 0;
 
-	static ICallWrapper *pBroadcastPrintf = nullptr;
-
-	if (!pBroadcastPrintf)
-	{
-		int offset = -1;
-		if (!g_pGameConf->GetOffset("CBaseServer::BroadcastPrintf", &offset) || offset == -1)
-		{
-			pContext->ReportError("Failed to get CBaseServer::BroadcastPrintf offset.");
-			return 0;
-		}
-
-		PassInfo pass[3];
-		pass[0].flags = PASSFLAG_BYVAL;
-		pass[0].type = PassType_Basic;
-		pass[0].size = sizeof(void *);
-		pass[1].flags = PASSFLAG_BYVAL;
-		pass[1].type = PassType_Basic;
-		pass[1].size = sizeof(char *);
-		pass[2].flags = PASSFLAG_BYVAL;
-		pass[2].type = PassType_Basic;
-		pass[2].size = sizeof(char *);
-
-		void *iserver = (void *)hltvserver->GetBaseServer();
-		void **vtable = *(void ***)iserver;
-		void *func = vtable[offset];
-
-		pBroadcastPrintf = bintools->CreateCall(func, CallConv_Cdecl, NULL, pass, 3);
-	}
+	if (!g_bHasClientPrintfOffset)
+		return 0;
 
 	char buffer[1024];
 	size_t len;
@@ -276,21 +269,7 @@ static cell_t Native_BroadcastConsoleMessage(IPluginContext *pContext, const cel
 			return 0;
 	}
 
-	static char fmt[] = "%s\n";
-
-	if (pBroadcastPrintf)
-	{
-		unsigned char vstk[sizeof(void *) + sizeof(char *) * 2];
-		unsigned char *vptr = vstk;
-
-		*(void **)vptr = (void *)hltvserver->GetBaseServer();
-		vptr += sizeof(void *);
-		*(char **)vptr = fmt;
-		vptr += sizeof(char *);
-		*(char **)vptr = buffer;
-
-		pBroadcastPrintf->Execute(vstk, NULL);
-	}
+	SH_MCALL(hltvserver->GetBaseServer(), CBaseServer_BroadcastPrintf)("%s\n", buffer);
 
 	return 1;
 }
