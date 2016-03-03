@@ -303,7 +303,7 @@ native SourceTV_KickClient(client, const String:sReason[]);
  * This is called before any other validation has happened.
  * Similar to the OnClientPreConnectEx forward in the Connect extension by asherkin.
  *
- * @param name		The player name (always empty in CS:GO).
+ * @param name		The player name.
  * @param password	The password the client used to connect. Can be overwritten.
  * @param ip		The ip address of the client.
  * @param rejectReason	Buffer to write the reject reason to, if you want to reject the client from connecting.

@@ -7,7 +7,8 @@ projectName = 'sourcetvmanager'
 sourceFiles = [
   'extension.cpp',
   'natives.cpp',
-  'forwards.cpp'
+  'forwards.cpp',
+  'hltvdirectorwrapper.cpp'
 ]
 
 ###############
@@ -31,5 +32,37 @@ for sdk_name in ['css', 'csgo']:
   sdk = Extension.sdks[sdk_name]
   
   binary = Extension.HL2Config(project, projectName + '.ext.' + sdk.ext, sdk)
+  compiler = binary.compiler
+  
+  if sdk.name == 'csgo':
+    compiler.cxxincludes += [
+      os.path.join(sdk.path, 'common', 'protobuf-2.5.0', 'src'),
+      os.path.join(sdk.path, 'public', 'engine', 'protobuf'),
+      os.path.join(sdk.path, 'public', 'game', 'shared', 'csgo', 'protobuf')
+    ]
+    
+    if builder.target_platform == 'linux':
+      lib_path = os.path.join(sdk.path, 'lib', 'linux32', 'release', 'libprotobuf.a')
+    elif builder.target_platform == 'mac':
+      lib_path = os.path.join(sdk.path, 'lib', 'osx32', 'release', 'libprotobuf.a')
+    elif builder.target_platform == 'windows':
+      msvc_ver = compiler.version
+      vs_year = ''
+      if msvc_ver == 1800:
+        vs_year = '2013'
+      else:
+        raise Exception('Cannot find libprotobuf for MSVC version "' + str(compiler.version) + '"')
+
+      if 'DEBUG' in compiler.defines:
+        lib_path = os.path.join(sdk.path, 'lib', 'win32', 'debug', 'vs' + vs_year, 'libprotobuf.lib')
+      else:
+        lib_path = os.path.join(sdk.path, 'lib', 'win32', 'release', 'vs' + vs_year, 'libprotobuf.lib')
+    compiler.linkflags.insert(0, binary.Dep(lib_path))
+    
+    binary.sources += [
+      os.path.join(sdk.path, 'public', 'engine', 'protobuf', 'netmessages.pb.cc'),
+      os.path.join(sdk.path, 'public', 'game', 'shared', 'csgo', 'protobuf', 'cstrike15_usermessages.pb.cc'),
+      os.path.join(sdk.path, 'public', 'game', 'shared', 'csgo', 'protobuf', 'cstrike15_usermessage_helpers.cpp'),
+    ]
 
 Extension.extensions = builder.Add(project)

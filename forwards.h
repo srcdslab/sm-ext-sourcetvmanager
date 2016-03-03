@@ -35,6 +35,20 @@
 #include "extension.h"
 #include "netadr.h"
 
+#if SOURCE_ENGINE == SE_CSGO
+#include "netmessages.pb.h"
+
+template <int Type, class NetMessage, int Group, bool reliable>
+class CNetMessagePB : public INetMessage, public NetMessage {
+public:
+	~CNetMessagePB() {}
+
+};
+
+typedef CNetMessagePB<16, CCLCMsg_SplitPlayerConnect, 0, true>	NetMsg_SplitPlayerConnect;
+
+#endif
+
 class CGameInfo;
 
 class CForwardManager
@@ -57,8 +71,8 @@ private:
 	void OnStartRecording_Post(const char *filename, bool bContinuously);
 #if SOURCE_ENGINE == SE_CSGO
 	void OnStopRecording_Post(CGameInfo const *info);
-	IClient *OnSpectatorConnect(netadr_s & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<INetMessage *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown);
-	IClient *OnSpectatorConnect_Post(netadr_s & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<INetMessage *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown);
+	IClient *OnSpectatorConnect(netadr_s & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown);
+	IClient *OnSpectatorConnect_Post(netadr_s & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown);
 #else
 	void OnStopRecording_Post();
 	IClient *OnSpectatorConnect(netadr_t &address, int nProtocol, int iChallenge, int iClientChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie);

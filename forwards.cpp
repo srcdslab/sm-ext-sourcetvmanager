@@ -42,7 +42,7 @@ SH_DECL_HOOK0_void(IDemoRecorder, StopRecording, SH_NOATTRIB, 0)
 #endif
 
 #if SOURCE_ENGINE == SE_CSGO
-SH_DECL_MANUALHOOK13(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, netadr_s &, int, int, int, const char *, const char *, const char *, int, CUtlVector<INetMessage *> &, bool, CrossPlayPlatform_t, const unsigned char *, int);
+SH_DECL_MANUALHOOK13(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, netadr_s &, int, int, int, const char *, const char *, const char *, int, CUtlVector<NetMsg_SplitPlayerConnect *> &, bool, CrossPlayPlatform_t, const unsigned char *, int);
 SH_DECL_HOOK1_void(IClient, Disconnect, SH_NOATTRIB, 0, const char *);
 #else
 SH_DECL_MANUALHOOK9(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, netadr_t &, int, int, int, int, const char *, const char *, const char *, int);
@@ -188,6 +188,31 @@ static void RejectConnection(IServer *server, netadr_t &address, char *pchReason
 		pRejectConnection->Execute(vstk, NULL);
 	}
 }
+
+static bool ExtractPlayerName(CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, char *name, int maxlen)
+{
+	for (int i = 0; i < pSplitPlayerConnectVector.Count(); i++)
+	{
+		NetMsg_SplitPlayerConnect *split = pSplitPlayerConnectVector[i];
+		if (!split->has_convars())
+			continue;
+
+		const CMsg_CVars cvars = split->convars();
+		for (int c = 0; c < cvars.cvars_size(); c++)
+		{
+			const CMsg_CVars_CVar cvar = cvars.cvars(c);
+			if (!cvar.has_name() || !cvar.has_value())
+				continue;
+
+			if (!strcmp(cvar.name().c_str(), "name"))
+			{
+				strncpy(name, cvar.value().c_str(), maxlen);
+				return true;
+			}
+		}
+	}
+	return false;
+}
 #else
 static void RejectConnection(IServer *server, netadr_t &address, int iClientChallenge, char *pchReason)
 {
@@ -239,13 +264,21 @@ static void RejectConnection(IServer *server, netadr_t &address, int iClientChal
 char passwordBuffer[255];
 #if SOURCE_ENGINE == SE_CSGO
 // CHLTVServer::ConnectClient(ns_address const&, int, int, int, char const*, char const*, char const*, int, CUtlVector<CNetMessagePB<16, CCLCMsg_SplitPlayerConnect, 0, true> *, CUtlMemory<CNetMessagePB<16, CCLCMsg_SplitPlayerConnect, 0, true> *, int>> &, bool, CrossPlayPlatform_t, unsigned char const*, int)
-IClient *CForwardManager::OnSpectatorConnect(netadr_s & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<INetMessage *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown)
+IClient *CForwardManager::OnSpectatorConnect(netadr_s & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown)
 #else
 IClient *CForwardManager::OnSpectatorConnect(netadr_t & address, int nProtocol, int iChallenge, int iClientChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie)
 #endif
 {
 	if (!pCookie || cbCookie < sizeof(uint64))
 		RETURN_META_VALUE(MRES_IGNORED, nullptr);
+
+#if SOURCE_ENGINE == SE_CSGO
+	// CS:GO doesn't send the player name in pchName, but only in the client info convars.
+	// Try to extract the name from the protobuf msg.
+	char playerName[MAX_PLAYER_NAME_LENGTH];
+	if (ExtractPlayerName(pSplitPlayerConnectVector, playerName, sizeof(playerName)))
+		pchName = playerName;
+#endif
 
 	char ipString[16];
 	V_snprintf(ipString, sizeof(ipString), "%u.%u.%u.%u", address.ip[0], address.ip[1], address.ip[2], address.ip[3]);
@@ -283,7 +316,7 @@ IClient *CForwardManager::OnSpectatorConnect(netadr_t & address, int nProtocol, 
 }
 
 #if SOURCE_ENGINE == SE_CSGO
-IClient *CForwardManager::OnSpectatorConnect_Post(netadr_s & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<INetMessage *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char * pUnknown, int iUnknown)
+IClient *CForwardManager::OnSpectatorConnect_Post(netadr_s & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char * pUnknown, int iUnknown)
 #else
 IClient *CForwardManager::OnSpectatorConnect_Post(netadr_t & address, int nProtocol, int iChallenge, int iClientChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie)
 #endif
