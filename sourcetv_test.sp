@@ -8,6 +8,9 @@ public OnPluginStart()
 	RegConsoleCmd("sm_servercount", Cmd_GetServerCount);
 	RegConsoleCmd("sm_selectserver", Cmd_SelectServer);
 	RegConsoleCmd("sm_selectedserver", Cmd_GetSelectedServer);
+	RegConsoleCmd("sm_ismaster", Cmd_IsMasterProxy);
+	RegConsoleCmd("sm_serverip", Cmd_GetServerIP);
+	RegConsoleCmd("sm_serverport", Cmd_GetServerPort);
 	RegConsoleCmd("sm_botindex", Cmd_GetBotIndex);
 	RegConsoleCmd("sm_broadcasttick", Cmd_GetBroadcastTick);
 	RegConsoleCmd("sm_localstats", Cmd_Localstats);
@@ -100,6 +103,26 @@ public Action:Cmd_SelectServer(client, args)
 public Action:Cmd_GetSelectedServer(client, args)
 {
 	ReplyToCommand(client, "SourceTV selected server: %d", SourceTV_GetSelectedServerInstance());
+	return Plugin_Handled;
+}
+
+public Action:Cmd_IsMasterProxy(client, args)
+{
+	ReplyToCommand(client, "SourceTV is master proxy: %d", SourceTV_IsMasterProxy());
+	return Plugin_Handled;
+}
+
+public Action:Cmd_GetServerIP(client, args)
+{
+	new String:sIP[32];
+	new bool:bSuccess = SourceTV_GetServerIP(sIP, sizeof(sIP));
+	ReplyToCommand(client, "SourceTV server ip (ret %d): %s", bSuccess, sIP);
+	return Plugin_Handled;
+}
+
+public Action:Cmd_GetServerPort(client, args)
+{
+	ReplyToCommand(client, "SourceTV server port: %d", SourceTV_GetServerPort());
 	return Plugin_Handled;
 }
 

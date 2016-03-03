@@ -36,6 +36,30 @@ native SourceTV_SelectServerInstance(instance);
 native SourceTV_GetSelectedServerInstance();
 
 /**
+ * Returns whether this SourceTV instance is a master proxy or relay.
+ *
+ * @return	True if SourceTV instance is master proxy, false otherwise.
+ */
+native SourceTV_IsMasterProxy();
+
+/**
+ * Get the local ip of the SourceTV server.
+ *
+ * @param ip	Buffer to save IP in.
+ * @param maxlen	Maximum length of the buffer.
+ * @return	True if IP written, false otherwise.
+ */
+native bool:SourceTV_GetServerIP(String:ip[], maxlen);
+
+/**
+ * Get the UDP port of the SourceTV server.
+ * This is the port clients use to connect.
+ *
+ * @return	SourceTV server UDP port.
+ */
+native SourceTV_GetServerPort();
+
+/**
  * Get the client index of the SourceTV bot.
  *
  * @return Client index of SourceTV bot.
@@ -403,6 +427,7 @@ public __ext_stvmngr_SetNTVOptional()
 	MarkNativeAsOptional("SourceTV_GetServerInstanceCount");
 	MarkNativeAsOptional("SourceTV_SelectServerInstance");
 	MarkNativeAsOptional("SourceTV_GetSelectedServerInstance");
+	MarkNativeAsOptional("SourceTV_IsMasterProxy");
 	MarkNativeAsOptional("SourceTV_GetBotIndex");
 	MarkNativeAsOptional("SourceTV_GetLocalStats");
 	MarkNativeAsOptional("SourceTV_GetGlobalStats");

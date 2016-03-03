@@ -47,6 +47,7 @@
 #include "ihltvdemorecorder.h"
 #include "igameevents.h"
 #include "inetmessage.h"
+#include "netadr.h"
 #include "hltvdirectorwrapper.h"
 #include "hltvclientwrapper.h"
 

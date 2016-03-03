@@ -110,6 +110,39 @@ static cell_t Native_GetSelectedServerInstance(IPluginContext *pContext, const c
 #endif
 }
 
+// native SourceTV_IsMasterProxy();
+static cell_t Native_IsMasterProxy(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	return hltvserver->IsMasterProxy();
+}
+
+// native bool:SourceTV_GetServerIP(String:ip[], maxlen);
+static cell_t Native_GetServerIP(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	const netadr_t *adr = hltvserver->GetRelayAddress();
+
+	char buf[16];
+	V_snprintf(buf, sizeof(buf), "%d.%d.%d.%d", adr->ip[0], adr->ip[1], adr->ip[2], adr->ip[3]);
+	pContext->StringToLocalUTF8(params[1], static_cast<size_t>(params[2]), buf, NULL);
+
+	return 1;
+}
+
+// native SourceTV_GetServerPort();
+static cell_t Native_GetServerPort(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	return hltvserver->GetBaseServer()->GetUDPPort();
+}
+
 // native SourceTV_GetBotIndex();
 static cell_t Native_GetBotIndex(IPluginContext *pContext, const cell_t *params)
 {
@@ -709,6 +742,9 @@ const sp_nativeinfo_t sourcetv_natives[] =
 	{ "SourceTV_GetServerInstanceCount", Native_GetServerInstanceCount },
 	{ "SourceTV_SelectServerInstance", Native_SelectServerInstance },
 	{ "SourceTV_GetSelectedServerInstance", Native_GetSelectedServerInstance },
+	{ "SourceTV_IsMasterProxy", Native_IsMasterProxy },
+	{ "SourceTV_GetServerIP", Native_GetServerIP },
+	{ "SourceTV_GetServerPort", Native_GetServerPort },
 	{ "SourceTV_GetBotIndex", Native_GetBotIndex },
 	{ "SourceTV_GetLocalStats", Native_GetLocalStats },
 	{ "SourceTV_GetGlobalStats", Native_GetGlobalStats },

@@ -33,7 +33,6 @@
 #define _INCLUDE_SOURCEMOD_EXTENSION_FORWARDS_H_
 
 #include "extension.h"
-#include "netadr.h"
 
 #if SOURCE_ENGINE == SE_CSGO
 #include "netmessages.pb.h"
