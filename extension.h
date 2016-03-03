@@ -40,8 +40,6 @@
 #include "smsdk_ext.h"
 #include <IBinTools.h>
 #include <ISDKTools.h>
-#include "hltvdirectorwrapper.h"
-#include "hltvclientwrapper.h"
 #include "ihltvdirector.h"
 #include "ihltv.h"
 #include "iserver.h"
@@ -49,6 +47,8 @@
 #include "ihltvdemorecorder.h"
 #include "igameevents.h"
 #include "inetmessage.h"
+#include "hltvdirectorwrapper.h"
+#include "hltvclientwrapper.h"
 
 class INetMessage;
 
