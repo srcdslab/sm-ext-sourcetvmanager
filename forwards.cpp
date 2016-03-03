@@ -42,12 +42,14 @@ SH_DECL_HOOK0_void(IDemoRecorder, StopRecording, SH_NOATTRIB, 0)
 #endif
 
 #if SOURCE_ENGINE == SE_CSGO
-SH_DECL_MANUALHOOK13(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, netadr_s &, int, int, int, const char *, const char *, const char *, int, CUtlVector<NetMsg_SplitPlayerConnect *> &, bool, CrossPlayPlatform_t, const unsigned char *, int);
+SH_DECL_MANUALHOOK13(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, const netadr_t &, int, int, int, const char *, const char *, const char *, int, CUtlVector<NetMsg_SplitPlayerConnect *> &, bool, CrossPlayPlatform_t, const unsigned char *, int);
 SH_DECL_HOOK1_void(IClient, Disconnect, SH_NOATTRIB, 0, const char *);
 #else
 SH_DECL_MANUALHOOK9(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, netadr_t &, int, int, int, int, const char *, const char *, const char *, int);
 SH_DECL_HOOK0_void_vafmt(IClient, Disconnect, SH_NOATTRIB, 0);
 #endif
+
+SH_DECL_MANUALHOOK1(CHLTVServer_GetChallengeType, 0, 0, 0, int, const netadr_t &);
 
 void CForwardManager::Init()
 {
@@ -61,6 +63,17 @@ void CForwardManager::Init()
 		SH_MANUALHOOK_RECONFIGURE(CHLTVServer_ConnectClient, offset, 0, 0);
 		m_bHasClientConnectOffset = true;
 	}
+
+	if (!g_pGameConf->GetOffset("CHLTVServer::GetChallengeType", &offset) || offset == -1)
+	{
+		smutils->LogError(myself, "Failed to get CHLTVServer::GetChallengeType offset.");
+	}
+	else
+	{
+		SH_MANUALHOOK_RECONFIGURE(CHLTVServer_GetChallengeType, offset, 0, 0);
+		m_bHasGetChallengeTypeOffset = true;
+	}
+
 	m_StartRecordingFwd = forwards->CreateForward("SourceTV_OnStartRecording", ET_Ignore, 2, NULL, Param_Cell, Param_String);
 	m_StopRecordingFwd = forwards->CreateForward("SourceTV_OnStopRecording", ET_Ignore, 3, NULL, Param_Cell, Param_String, Param_Cell);
 	m_SpectatorPreConnectFwd = forwards->CreateForward("SourceTV_OnSpectatorPreConnect", ET_LowEvent, 4, NULL, Param_String, Param_String, Param_String, Param_String);
@@ -93,10 +106,11 @@ void CForwardManager::UnhookRecorder(IDemoRecorder *recorder)
 
 void CForwardManager::HookServer(IServer *server)
 {
-	if (!m_bHasClientConnectOffset)
-		return;
-
-	SH_ADD_MANUALHOOK(CHLTVServer_ConnectClient, server, SH_MEMBER(this, &CForwardManager::OnSpectatorConnect), false);
+	if (m_bHasClientConnectOffset)
+		SH_ADD_MANUALHOOK(CHLTVServer_ConnectClient, server, SH_MEMBER(this, &CForwardManager::OnSpectatorConnect), false);
+	
+	if (m_bHasGetChallengeTypeOffset)
+		SH_ADD_MANUALHOOK(CHLTVServer_GetChallengeType, server, SH_MEMBER(this, &CForwardManager::OnGetChallengeType), false);
 
 	// Hook all already connected clients as well for late loading
 	for (int i = 0; i < server->GetClientCount(); i++)
@@ -114,10 +128,11 @@ void CForwardManager::HookServer(IServer *server)
 
 void CForwardManager::UnhookServer(IServer *server)
 {
-	if (!m_bHasClientConnectOffset)
-		return;
+	if (m_bHasClientConnectOffset)
+		SH_REMOVE_MANUALHOOK(CHLTVServer_ConnectClient, server, SH_MEMBER(this, &CForwardManager::OnSpectatorConnect), false);
 
-	SH_REMOVE_MANUALHOOK(CHLTVServer_ConnectClient, server, SH_MEMBER(this, &CForwardManager::OnSpectatorConnect), false);
+	if (m_bHasGetChallengeTypeOffset)
+		SH_REMOVE_MANUALHOOK(CHLTVServer_GetChallengeType, server, SH_MEMBER(this, &CForwardManager::OnGetChallengeType), false);
 
 	// Unhook all connected clients as well.
 	for (int i = 0; i < server->GetClientCount(); i++)
@@ -140,7 +155,7 @@ void CForwardManager::UnhookClient(IClient *client)
 
 #if SOURCE_ENGINE == SE_CSGO
 // CBaseServer::RejectConnection(ns_address const&, char const*, ...)
-static void RejectConnection(IServer *server, netadr_t &address, char *pchReason)
+static void RejectConnection(IServer *server, const netadr_t &address, const char *pchReason)
 {
 	static ICallWrapper *pRejectConnection = nullptr;
 
@@ -186,7 +201,7 @@ static void RejectConnection(IServer *server, netadr_t &address, char *pchReason
 		vptr += sizeof(void *);
 		*(char **)vptr = fmt;
 		vptr += sizeof(char *);
-		*(char **)vptr = pchReason;
+		*(const char **)vptr = pchReason;
 
 		pRejectConnection->Execute(vstk, NULL);
 	}
@@ -267,12 +282,12 @@ static void RejectConnection(IServer *server, netadr_t &address, int iClientChal
 char passwordBuffer[255];
 #if SOURCE_ENGINE == SE_CSGO
 // CHLTVServer::ConnectClient(ns_address const&, int, int, int, char const*, char const*, char const*, int, CUtlVector<CNetMessagePB<16, CCLCMsg_SplitPlayerConnect, 0, true> *, CUtlMemory<CNetMessagePB<16, CCLCMsg_SplitPlayerConnect, 0, true> *, int>> &, bool, CrossPlayPlatform_t, unsigned char const*, int)
-IClient *CForwardManager::OnSpectatorConnect(netadr_s & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown)
+IClient *CForwardManager::OnSpectatorConnect(const netadr_t & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown)
 #else
 IClient *CForwardManager::OnSpectatorConnect(netadr_t & address, int nProtocol, int iChallenge, int iClientChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie)
 #endif
 {
-	if (!pCookie || cbCookie < sizeof(uint64))
+	if (!pCookie || (size_t)cbCookie < sizeof(uint64))
 		RETURN_META_VALUE(MRES_IGNORED, nullptr);
 
 #if SOURCE_ENGINE == SE_CSGO
@@ -330,6 +345,16 @@ IClient *CForwardManager::OnSpectatorConnect(netadr_t & address, int nProtocol, 
 
 	// Don't call the hooked function again, just return its value.
 	RETURN_META_VALUE(MRES_SUPERCEDE, client);
+}
+
+// Force steam authentication
+// Thanks GoD-Tony :)
+int CForwardManager::OnGetChallengeType(const netadr_t &address)
+{
+	if (!tv_force_steamauth.GetBool())
+		RETURN_META_VALUE(MRES_IGNORED, k_EAuthProtocolHashedCDKey);
+
+	RETURN_META_VALUE(MRES_SUPERCEDE, k_EAuthProtocolSteam);
 }
 
 void CForwardManager::OnSpectatorDisconnect(const char *reason)

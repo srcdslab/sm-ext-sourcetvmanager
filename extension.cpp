@@ -40,7 +40,8 @@ void *old_host_client = nullptr;
 bool g_HostClientOverridden = false;
 
 IGameEventManager2 *gameevents = nullptr;
-CGlobalVars *gpGlobals;
+CGlobalVars *gpGlobals = nullptr;
+ICvar *icvar = nullptr;
 
 IBinTools *bintools = nullptr;
 ISDKTools *sdktools = nullptr;
@@ -79,6 +80,8 @@ SourceTVManager g_STVManager;		/**< Global singleton for extension's main interf
 SMEXT_LINK(&g_STVManager);
 
 extern const sp_nativeinfo_t sourcetv_natives[];
+
+ConVar tv_force_steamauth("tv_force_steamauth", "1", FCVAR_NONE, "Validate SourceTV clients with Steam.");
 
 bool SourceTVManager::SDK_OnLoad(char *error, size_t maxlength, bool late)
 {
@@ -176,10 +179,20 @@ bool SourceTVManager::SDK_OnMetamodLoad(ISmmAPI *ismm, char *error, size_t maxle
 {
 	GET_V_IFACE_CURRENT(GetServerFactory, hltvdirector, IHLTVDirector, INTERFACEVERSION_HLTVDIRECTOR);
 	GET_V_IFACE_CURRENT(GetEngineFactory, gameevents, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2);
+	GET_V_IFACE_CURRENT(GetEngineFactory, icvar, ICvar, CVAR_INTERFACE_VERSION);
 
 	gpGlobals = ismm->GetCGlobals();
 
+	g_pCVar = icvar;
+	ConVar_Register(0, this);
+
 	return true;
+}
+
+bool SourceTVManager::RegisterConCommandBase(ConCommandBase *pCommandBase)
+{
+	/* Always call META_REGCVAR instead of going through the engine. */
+	return META_REGCVAR(pCommandBase);
 }
 
 void SourceTVManager::SDK_OnUnload()

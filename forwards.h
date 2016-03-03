@@ -49,6 +49,13 @@ typedef CNetMessagePB<16, CCLCMsg_SplitPlayerConnect, 0, true>	NetMsg_SplitPlaye
 
 #endif
 
+typedef enum EAuthProtocol
+{
+	k_EAuthProtocolWONCertificate = 1,
+	k_EAuthProtocolHashedCDKey = 2,
+	k_EAuthProtocolSteam = 3
+} EAuthProtocol;
+
 class CGameInfo;
 
 class CForwardManager
@@ -71,12 +78,14 @@ private:
 	void OnStartRecording_Post(const char *filename, bool bContinuously);
 #if SOURCE_ENGINE == SE_CSGO
 	void OnStopRecording_Post(CGameInfo const *info);
-	IClient *OnSpectatorConnect(netadr_s & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown);
+	IClient *OnSpectatorConnect(const netadr_t & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown);
 #else
 	void OnStopRecording_Post();
 	IClient *OnSpectatorConnect(netadr_t &address, int nProtocol, int iChallenge, int iClientChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie);
 #endif
 	void OnSpectatorDisconnect(const char *reason);
+
+	int OnGetChallengeType(const netadr_t &address);
 
 private:
 	IForward *m_StartRecordingFwd;
@@ -87,6 +96,7 @@ private:
 	IForward *m_SpectatorDisconnectedFwd;
 
 	bool m_bHasClientConnectOffset = false;
+	bool m_bHasGetChallengeTypeOffset = false;
 };
 
 extern CForwardManager g_pSTVForwards;

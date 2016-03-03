@@ -37,6 +37,12 @@
 				"linux"	"53"
 			}
 			
+			"CHLTVServer::GetChallengeType"
+			{
+				"windows"	"59"
+				"linux"	"60"
+			}
+			
 			"CHLTVServer::m_DemoRecorder"
 			{
 				"windows"	"19600"
@@ -127,6 +133,12 @@
 			{
 				"windows"	"47"
 				"linux"	"48"
+			}
+			
+			"CHLTVServer::GetChallengeType"
+			{
+				"windows"	"54"
+				"linux"	"55"
 			}
 			
 			"CHLTVServer::m_DemoRecorder"

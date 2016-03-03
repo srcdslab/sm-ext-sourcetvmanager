@@ -52,11 +52,13 @@
 
 class INetMessage;
 
+extern ConVar tv_force_steamauth;
+
 /**
  * @brief Sample implementation of the SDK Extension.
  * Note: Uncomment one of the pre-defined virtual functions in order to use it.
  */
-class SourceTVManager : public SDKExtension
+class SourceTVManager : public SDKExtension, public IConCommandBaseAccessor
 {
 public:
 	/**
@@ -127,6 +129,9 @@ public:
 	//virtual bool SDK_OnMetamodPauseChange(bool paused, char *error, size_t maxlength);
 #endif
 
+public: // IConCommandBaseAccessor
+	bool RegisterConCommandBase(ConCommandBase *pCommandBase);
+
 public:
 	void SelectSourceTVServer(IHLTVServer *hltv);
 	IDemoRecorder *GetDemoRecorderPtr(IHLTVServer *hltvserver);
@@ -158,6 +163,7 @@ extern IGameConfig *g_pGameConf;
 extern IServer *iserver;
 extern CGlobalVars *gpGlobals;
 extern IGameEventManager2 *gameevents;
+extern ICvar *icvar;
 
 extern IHLTVDirector *hltvdirector;
 extern IHLTVServer *hltvserver;
