@@ -288,6 +288,30 @@ native bool:SourceTV_IsClientConnected(client);
 native SourceTV_GetSpectatorName(client, String:name[], maxlen);
 
 /**
+ * Get the IP of a SourceTV spectator client.
+ *
+ * @param client	The spectator client index.
+ * @param name	Buffer for the client ip.
+ * @param maxlen	Maximal length of the buffer.
+ * @noreturn
+ * @error	Invalid client index or not connected.
+ */
+native SourceTV_GetSpectatorIP(client, String:ip[], maxlen);
+
+/**
+ * Get the password of a SourceTV spectator client.
+ * The password the client tried to connect with.
+ * Ignores changes from the SourceTV_OnSpectatorPreConnect forward.
+ *
+ * @param client	The spectator client index.
+ * @param name	Buffer for the client ip.
+ * @param maxlen	Maximal length of the buffer.
+ * @noreturn
+ * @error	Invalid client index or not connected.
+ */
+native SourceTV_GetSpectatorPassword(client, String:password[], maxlen);
+
+/**
  * Kick a SourceTV spectator client.
  * 
  * @param client	The spectator client index.

@@ -41,6 +41,7 @@
 #include <IBinTools.h>
 #include <ISDKTools.h>
 #include "hltvdirectorwrapper.h"
+#include "hltvclientwrapper.h"
 #include "ihltvdirector.h"
 #include "ihltv.h"
 #include "iserver.h"

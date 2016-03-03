@@ -141,14 +141,15 @@ public Action:Cmd_GetDelay(client, args)
 public Action:Cmd_Spectators(client, args)
 {
 	ReplyToCommand(client, "SourceTV spectator count: %d/%d", SourceTV_GetSpectatorCount(), SourceTV_GetClientCount());
-	new String:sName[64];
+	new String:sName[64], String:sIP[16];
 	for (new i=1;i<=SourceTV_GetClientCount();i++)
 	{
 		if (!SourceTV_IsClientConnected(i))
 			continue;
 		
 		SourceTV_GetSpectatorName(i, sName, sizeof(sName));
-		ReplyToCommand(client, "Client %d: %s", i, sName);
+		SourceTV_GetSpectatorIP(i, sIP, sizeof(sIP));
+		ReplyToCommand(client, "Client %d: %s - %s", i, sName, sIP);
 	}
 	return Plugin_Handled;
 }

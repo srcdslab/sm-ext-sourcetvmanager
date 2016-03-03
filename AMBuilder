@@ -8,7 +8,8 @@ sourceFiles = [
   'extension.cpp',
   'natives.cpp',
   'forwards.cpp',
-  'hltvdirectorwrapper.cpp'
+  'hltvdirectorwrapper.cpp',
+  'hltvclientwrapper.cpp'
 ]
 
 ###############

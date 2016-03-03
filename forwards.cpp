@@ -97,14 +97,18 @@ void CForwardManager::HookServer(IServer *server)
 		return;
 
 	SH_ADD_MANUALHOOK(CHLTVServer_ConnectClient, server, SH_MEMBER(this, &CForwardManager::OnSpectatorConnect), false);
-	SH_ADD_MANUALHOOK(CHLTVServer_ConnectClient, server, SH_MEMBER(this, &CForwardManager::OnSpectatorConnect_Post), true);
 
 	// Hook all already connected clients as well for late loading
 	for (int i = 0; i < server->GetClientCount(); i++)
 	{
 		IClient *client = server->GetClient(i);
 		if (client->IsConnected())
+		{
 			HookClient(client);
+			// Ip and password unknown :(
+			// Could add more gamedata to fetch it if people really lateload the extension and expect it to work :B
+			g_HLTVClientManager.GetClient(i + 1)->Initialize("", "", client);
+		}
 	}
 }
 
@@ -114,7 +118,6 @@ void CForwardManager::UnhookServer(IServer *server)
 		return;
 
 	SH_REMOVE_MANUALHOOK(CHLTVServer_ConnectClient, server, SH_MEMBER(this, &CForwardManager::OnSpectatorConnect), false);
-	SH_REMOVE_MANUALHOOK(CHLTVServer_ConnectClient, server, SH_MEMBER(this, &CForwardManager::OnSpectatorConnect_Post), true);
 
 	// Unhook all connected clients as well.
 	for (int i = 0; i < server->GetClientCount(); i++)
@@ -296,9 +299,9 @@ IClient *CForwardManager::OnSpectatorConnect(netadr_t & address, int nProtocol, 
 	cell_t retVal = 1;
 	m_SpectatorPreConnectFwd->Execute(&retVal);
 
+	IServer *server = META_IFACEPTR(IServer);
 	if (retVal == 0)
 	{
-		IServer *server = META_IFACEPTR(IServer);
 #if SOURCE_ENGINE == SE_CSGO
 		RejectConnection(server, address, rejectReason);
 #else
@@ -307,30 +310,26 @@ IClient *CForwardManager::OnSpectatorConnect(netadr_t & address, int nProtocol, 
 		RETURN_META_VALUE(MRES_SUPERCEDE, nullptr);
 	}
 
-	pchPassword = passwordBuffer;
+	// Call the original function.
 #if SOURCE_ENGINE == SE_CSGO
-	RETURN_META_VALUE_MNEWPARAMS(MRES_IGNORED, nullptr, CHLTVServer_ConnectClient, (address, nProtocol, iChallenge, nAuthProtocol, pchName, pchPassword, pCookie, cbCookie, pSplitPlayerConnectVector, bUnknown, platform, pUnknown, iUnknown));
+	IClient *client = SH_MCALL(server, CHLTVServer_ConnectClient)(address, nProtocol, iChallenge, nAuthProtocol, pchName, passwordBuffer, pCookie, cbCookie, pSplitPlayerConnectVector, bUnknown, platform, pUnknown, iUnknown);
 #else
-	RETURN_META_VALUE_MNEWPARAMS(MRES_IGNORED, nullptr, CHLTVServer_ConnectClient, (address, nProtocol, iChallenge, iClientChallenge, nAuthProtocol, pchName, pchPassword, pCookie, cbCookie));
+	IClient *client = SH_MCALL(server, CHLTVServer_ConnectClient)(address, nProtocol, iChallenge, iClientChallenge, nAuthProtocol, pchName, passwordBuffer, pCookie, cbCookie);
 #endif
-}
 
-#if SOURCE_ENGINE == SE_CSGO
-IClient *CForwardManager::OnSpectatorConnect_Post(netadr_s & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char * pUnknown, int iUnknown)
-#else
-IClient *CForwardManager::OnSpectatorConnect_Post(netadr_t & address, int nProtocol, int iChallenge, int iClientChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie)
-#endif
-{
-	IClient *client = META_RESULT_ORIG_RET(IClient *);
 	if (!client)
-		RETURN_META_VALUE(MRES_IGNORED, nullptr);
+		RETURN_META_VALUE(MRES_SUPERCEDE, nullptr);
 
 	HookClient(client);
 
-	m_SpectatorConnectedFwd->PushCell(client->GetPlayerSlot()+1);
+	HLTVClientWrapper *wrapper = g_HLTVClientManager.GetClient(client->GetPlayerSlot() + 1);
+	wrapper->Initialize(ipString, pchPassword, client);
+
+	m_SpectatorConnectedFwd->PushCell(client->GetPlayerSlot() + 1);
 	m_SpectatorConnectedFwd->Execute();
 
-	RETURN_META_VALUE(MRES_IGNORED, nullptr);
+	// Don't call the hooked function again, just return its value.
+	RETURN_META_VALUE(MRES_SUPERCEDE, client);
 }
 
 void CForwardManager::OnSpectatorDisconnect(const char *reason)

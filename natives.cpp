@@ -544,7 +544,7 @@ static cell_t Native_IsClientConnected(IPluginContext *pContext, const cell_t *p
 		return 0;
 	}
 
-	IClient *pClient = hltvserver->GetBaseServer()->GetClient(client - 1);
+	HLTVClientWrapper *pClient = g_HLTVClientManager.GetClient(client);
 	return pClient->IsConnected();
 }
 
@@ -561,14 +561,62 @@ static cell_t Native_GetSpectatorName(IPluginContext *pContext, const cell_t *pa
 		return 0;
 	}
 
-	IClient *pClient = hltvserver->GetBaseServer()->GetClient(client - 1);
-	if (!pClient || !pClient->IsConnected())
+	HLTVClientWrapper *pClient = g_HLTVClientManager.GetClient(client);
+	if (!pClient->IsConnected())
 	{
 		pContext->ReportError("Client %d is not connected.", client);
 		return 0;
 	}
 	
-	pContext->StringToLocalUTF8(params[2], static_cast<size_t>(params[3]), pClient->GetClientName(), NULL);
+	pContext->StringToLocalUTF8(params[2], static_cast<size_t>(params[3]), pClient->Name(), NULL);
+	return 0;
+}
+
+// native SourceTV_GetSpectatorIP(client, String:ip[], maxlen);
+static cell_t Native_GetSpectatorIP(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	cell_t client = params[1];
+	if (client < 1 || client > hltvserver->GetBaseServer()->GetClientCount())
+	{
+		pContext->ReportError("Invalid spectator client index %d.", client);
+		return 0;
+	}
+
+	HLTVClientWrapper *pClient = g_HLTVClientManager.GetClient(client);
+	if (!pClient->IsConnected())
+	{
+		pContext->ReportError("Client %d is not connected.", client);
+		return 0;
+	}
+
+	pContext->StringToLocalUTF8(params[2], static_cast<size_t>(params[3]), pClient->Ip(), NULL);
+	return 0;
+}
+
+// native SourceTV_GetSpectatorPassword(client, String:password[], maxlen);
+static cell_t Native_GetSpectatorPassword(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	cell_t client = params[1];
+	if (client < 1 || client > hltvserver->GetBaseServer()->GetClientCount())
+	{
+		pContext->ReportError("Invalid spectator client index %d.", client);
+		return 0;
+	}
+
+	HLTVClientWrapper *pClient = g_HLTVClientManager.GetClient(client);
+	if (!pClient->IsConnected())
+	{
+		pContext->ReportError("Client %d is not connected.", client);
+		return 0;
+	}
+
+	pContext->StringToLocalUTF8(params[2], static_cast<size_t>(params[3]), pClient->Password(), NULL);
 	return 0;
 }
 
@@ -585,8 +633,8 @@ static cell_t Native_KickClient(IPluginContext *pContext, const cell_t *params)
 		return 0;
 	}
 
-	IClient *pClient = hltvserver->GetBaseServer()->GetClient(client - 1);
-	if (!pClient || !pClient->IsConnected())
+	HLTVClientWrapper *pClient = g_HLTVClientManager.GetClient(client);
+	if (!pClient->IsConnected())
 	{
 		pContext->ReportError("Client %d is not connected.", client);
 		return 0;
@@ -595,7 +643,7 @@ static cell_t Native_KickClient(IPluginContext *pContext, const cell_t *params)
 	char *pReason;
 	pContext->LocalToString(params[2], &pReason);
 
-	hltvserver->GetBaseServer()->DisconnectClient(pClient, pReason);
+	pClient->Kick(pReason);
 	return 0;
 }
 
@@ -626,6 +674,8 @@ const sp_nativeinfo_t sourcetv_natives[] =
 	{ "SourceTV_GetClientCount", Native_GetClientCount },
 	{ "SourceTV_IsClientConnected", Native_IsClientConnected },
 	{ "SourceTV_GetSpectatorName", Native_GetSpectatorName },
+	{ "SourceTV_GetSpectatorIP", Native_GetSpectatorIP },
+	{ "SourceTV_GetSpectatorPassword", Native_GetSpectatorPassword },
 	{ "SourceTV_KickClient", Native_KickClient },
 	{ NULL, NULL },
 };
