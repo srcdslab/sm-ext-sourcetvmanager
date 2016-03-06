@@ -181,15 +181,16 @@ public Action:Cmd_GetDelay(client, args)
 public Action:Cmd_Spectators(client, args)
 {
 	ReplyToCommand(client, "SourceTV spectator count: %d/%d", SourceTV_GetSpectatorCount(), SourceTV_GetClientCount());
-	new String:sName[64], String:sIP[16];
+	new String:sName[64], String:sIP[16], String:sPassword[256];
 	for (new i=1;i<=SourceTV_GetClientCount();i++)
 	{
 		if (!SourceTV_IsClientConnected(i))
 			continue;
 		
-		SourceTV_GetSpectatorName(i, sName, sizeof(sName));
-		SourceTV_GetSpectatorIP(i, sIP, sizeof(sIP));
-		ReplyToCommand(client, "Client %d%s: %s - %s", i, (SourceTV_IsClientProxy(i)?" (RELAY)":""), sName, sIP);
+		SourceTV_GetClientName(i, sName, sizeof(sName));
+		SourceTV_GetClientIP(i, sIP, sizeof(sIP));
+		SourceTV_GetClientPassword(i, sPassword, sizeof(sPassword));
+		ReplyToCommand(client, "Client %d%s: %s - %s (password: %s)", i, (SourceTV_IsClientProxy(i)?" (RELAY)":""), sName, sIP, sPassword);
 	}
 	return Plugin_Handled;
 }

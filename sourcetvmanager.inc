@@ -350,7 +350,7 @@ native bool:SourceTV_IsClientProxy(client);
  * @noreturn
  * @error	Invalid client index or not connected.
  */
-native SourceTV_GetSpectatorName(client, String:name[], maxlen);
+native SourceTV_GetClientName(client, String:name[], maxlen);
 
 /**
  * Get the IP of a SourceTV spectator client.
@@ -361,7 +361,7 @@ native SourceTV_GetSpectatorName(client, String:name[], maxlen);
  * @noreturn
  * @error	Invalid client index or not connected.
  */
-native SourceTV_GetSpectatorIP(client, String:ip[], maxlen);
+native SourceTV_GetClientIP(client, String:ip[], maxlen);
 
 /**
  * Get the password of a SourceTV spectator client.
@@ -374,7 +374,7 @@ native SourceTV_GetSpectatorIP(client, String:ip[], maxlen);
  * @noreturn
  * @error	Invalid client index or not connected.
  */
-native SourceTV_GetSpectatorPassword(client, String:password[], maxlen);
+native SourceTV_GetClientPassword(client, String:password[], maxlen);
 
 /**
  * Kick a SourceTV spectator client.
@@ -485,10 +485,10 @@ public __ext_stvmngr_SetNTVOptional()
 	MarkNativeAsOptional("SourceTV_GetMaxClients");
 	MarkNativeAsOptional("SourceTV_GetClientCount");
 	MarkNativeAsOptional("SourceTV_IsClientConnected");
-	MarkNativeAsOptional("SourceTV_GetSpectatorName");
-	MarkNativeAsOptional("SourceTV_GetSpectatorIP");
-	MarkNativeAsOptional("SourceTV_GetSpectatorPassword");
 	MarkNativeAsOptional("SourceTV_IsClientProxy");
+	MarkNativeAsOptional("SourceTV_GetClientName");
+	MarkNativeAsOptional("SourceTV_GetClientIP");
+	MarkNativeAsOptional("SourceTV_GetClientPassword");
 	MarkNativeAsOptional("SourceTV_KickClient");
 }
 #endif

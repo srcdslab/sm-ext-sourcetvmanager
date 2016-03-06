@@ -646,8 +646,8 @@ static cell_t Native_IsClientProxy(IPluginContext *pContext, const cell_t *param
 	return pClient->BaseClient()->IsHLTV();
 }
 
-// native SourceTV_GetSpectatorName(client, String:name[], maxlen);
-static cell_t Native_GetSpectatorName(IPluginContext *pContext, const cell_t *params)
+// native SourceTV_GetClientName(client, String:name[], maxlen);
+static cell_t Native_GetClientName(IPluginContext *pContext, const cell_t *params)
 {
 	if (hltvserver == nullptr)
 		return 0;
@@ -670,8 +670,8 @@ static cell_t Native_GetSpectatorName(IPluginContext *pContext, const cell_t *pa
 	return 0;
 }
 
-// native SourceTV_GetSpectatorIP(client, String:ip[], maxlen);
-static cell_t Native_GetSpectatorIP(IPluginContext *pContext, const cell_t *params)
+// native SourceTV_GetClientIP(client, String:ip[], maxlen);
+static cell_t Native_GetClientIP(IPluginContext *pContext, const cell_t *params)
 {
 	if (hltvserver == nullptr)
 		return 0;
@@ -694,8 +694,8 @@ static cell_t Native_GetSpectatorIP(IPluginContext *pContext, const cell_t *para
 	return 0;
 }
 
-// native SourceTV_GetSpectatorPassword(client, String:password[], maxlen);
-static cell_t Native_GetSpectatorPassword(IPluginContext *pContext, const cell_t *params)
+// native SourceTV_GetClientPassword(client, String:password[], maxlen);
+static cell_t Native_GetClientPassword(IPluginContext *pContext, const cell_t *params)
 {
 	if (hltvserver == nullptr)
 		return 0;
@@ -776,10 +776,10 @@ const sp_nativeinfo_t sourcetv_natives[] =
 	{ "SourceTV_GetMaxClients", Native_GetMaxClients },
 	{ "SourceTV_GetClientCount", Native_GetClientCount },
 	{ "SourceTV_IsClientConnected", Native_IsClientConnected },
-	{ "SourceTV_GetSpectatorName", Native_GetSpectatorName },
-	{ "SourceTV_GetSpectatorIP", Native_GetSpectatorIP },
-	{ "SourceTV_GetSpectatorPassword", Native_GetSpectatorPassword },
 	{ "SourceTV_IsClientProxy", Native_IsClientProxy },
+	{ "SourceTV_GetClientName", Native_GetClientName },
+	{ "SourceTV_GetClientIP", Native_GetClientIP },
+	{ "SourceTV_GetClientPassword", Native_GetClientPassword },
 	{ "SourceTV_KickClient", Native_KickClient },
 	{ NULL, NULL },
 };
