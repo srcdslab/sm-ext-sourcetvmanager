@@ -31,6 +31,7 @@
 
 #include "extension.h"
 #include "natives.h"
+#include "hltvserverwrapper.h"
 
 #define TICK_INTERVAL			(gpGlobals->interval_per_tick)
 #define TIME_TO_TICKS( dt )		( (int)( 0.5f + (float)(dt) / TICK_INTERVAL ) )
@@ -94,20 +95,16 @@ static cell_t Native_GetSelectedServerInstance(IPluginContext *pContext, const c
 	if (hltvserver == nullptr)
 		return -1;
 
-#if SOURCE_ENGINE == SE_CSGO
-	for (int i = 0; i < hltvdirector->GetHLTVServerCount(); i++)
-	{
-		if (hltvserver == hltvdirector->GetHLTVServer(i))
-			return i;
-	}
+	return hltvserver->GetInstanceNumber();
+}
 
-	// We should have found it in the above loop :S
-	hltvserver = nullptr;
-	return -1;
-#else
-	// There only is one hltv server.
-	return 0;
-#endif
+// native SourceTV_IsActive();
+static cell_t Native_IsActive(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	return hltvserver->GetBaseServer()->IsActive();
 }
 
 // native SourceTV_IsMasterProxy();
@@ -116,7 +113,7 @@ static cell_t Native_IsMasterProxy(IPluginContext *pContext, const cell_t *param
 	if (hltvserver == nullptr)
 		return 0;
 
-	return hltvserver->IsMasterProxy();
+	return hltvserver->GetHLTVServer()->IsMasterProxy();
 }
 
 // native bool:SourceTV_GetServerIP(String:ip[], maxlen);
@@ -125,7 +122,7 @@ static cell_t Native_GetServerIP(IPluginContext *pContext, const cell_t *params)
 	if (hltvserver == nullptr)
 		return 0;
 
-	const netadr_t *adr = hltvserver->GetRelayAddress();
+	const netadr_t *adr = hltvserver->GetHLTVServer()->GetRelayAddress();
 
 	char buf[16];
 	V_snprintf(buf, sizeof(buf), "%d.%d.%d.%d", adr->ip[0], adr->ip[1], adr->ip[2], adr->ip[3]);
@@ -149,7 +146,7 @@ static cell_t Native_GetBotIndex(IPluginContext *pContext, const cell_t *params)
 	if (hltvserver == nullptr)
 		return 0;
 
-	return hltvserver->GetHLTVSlot() + 1;
+	return hltvserver->GetHLTVServer()->GetHLTVSlot() + 1;
 }
 
 // native bool:SourceTV_GetLocalStats(&proxies, &slots, &specs);
@@ -159,7 +156,7 @@ static cell_t Native_GetLocalStats(IPluginContext *pContext, const cell_t *param
 		return 0;
 
 	int proxies, slots, specs;
-	hltvserver->GetLocalStats(proxies, slots, specs);
+	hltvserver->GetHLTVServer()->GetLocalStats(proxies, slots, specs);
 
 	cell_t *plProxies, *plSlots, *plSpecs;
 	pContext->LocalToPhysAddr(params[1], &plProxies);
@@ -179,7 +176,7 @@ static cell_t Native_GetGlobalStats(IPluginContext *pContext, const cell_t *para
 		return 0;
 
 	int proxies, slots, specs;
-	hltvserver->GetGlobalStats(proxies, slots, specs);
+	hltvserver->GetHLTVServer()->GetGlobalStats(proxies, slots, specs);
 
 	cell_t *plProxies, *plSlots, *plSpecs;
 	pContext->LocalToPhysAddr(params[1], &plProxies);
@@ -275,9 +272,9 @@ static cell_t Native_BroadcastScreenMessage(IPluginContext *pContext, const cell
 	int ret = 1;
 	bool bLocalOnly = params[1] != 0;
 	if (bLocalOnly)
-		hltvserver->BroadcastEvent(msg);
+		hltvserver->GetHLTVServer()->BroadcastEvent(msg);
 	else
-		ret = BroadcastEventLocal(hltvserver, msg, false);
+		ret = BroadcastEventLocal(hltvserver->GetHLTVServer(), msg, false);
 
 	gameevents->FreeEvent(msg);
 
@@ -331,9 +328,9 @@ static cell_t Native_BroadcastChatMessage(IPluginContext *pContext, const cell_t
 	int ret = 1;
 	bool bLocalOnly = params[1] != 0;
 	if (bLocalOnly)
-		hltvserver->BroadcastEvent(msg);
+		hltvserver->GetHLTVServer()->BroadcastEvent(msg);
 	else
-		ret = BroadcastEventLocal(hltvserver, msg, false);
+		ret = BroadcastEventLocal(hltvserver->GetHLTVServer(), msg, false);
 
 	gameevents->FreeEvent(msg);
 
@@ -395,7 +392,7 @@ static cell_t Native_ForceFixedCameraShot(IPluginContext *pContext, const cell_t
 	shot->SetInt("target", params[3] ? gamehelpers->ReferenceToIndex(params[3]) : 0);
 	shot->SetFloat("fov", sp_ctof(params[4]));
 
-	hltvserver->BroadcastEvent(shot);
+	hltvserver->GetHLTVServer()->BroadcastEvent(shot);
 	gameevents->FreeEvent(shot);
 
 	// Prevent auto director from changing shots until we allow it to again.
@@ -437,7 +434,7 @@ static cell_t Native_ForceChaseCameraShot(IPluginContext *pContext, const cell_t
 	// Update director state
 	g_HLTVDirectorWrapper.SetPVSEntity(gamehelpers->ReferenceToIndex(params[1]));
 
-	hltvserver->BroadcastEvent(shot);
+	hltvserver->GetHLTVServer()->BroadcastEvent(shot);
 	gameevents->FreeEvent(shot);
 
 	// Prevent auto director from changing shots until we allow it to again.
@@ -449,10 +446,7 @@ static cell_t Native_ForceChaseCameraShot(IPluginContext *pContext, const cell_t
 // native bool:SourceTV_IsRecording();
 static cell_t Native_IsRecording(IPluginContext *pContext, const cell_t *params)
 {
-	if (demorecorder == nullptr)
-		return 0;
-
-	return demorecorder->IsRecording();
+	return hltvserver->GetDemoRecorder()->IsRecording();
 }
 
 // Checks in COM_IsValidPath in the engine
@@ -464,7 +458,7 @@ static bool IsValidPath(const char *path)
 // native bool:SourceTV_StartRecording(const String:sFilename[]);
 static cell_t Native_StartRecording(IPluginContext *pContext, const cell_t *params)
 {
-	if (hltvserver == nullptr || demorecorder == nullptr)
+	if (hltvserver == nullptr)
 		return 0;
 
 	// SourceTV is not active.
@@ -472,11 +466,11 @@ static cell_t Native_StartRecording(IPluginContext *pContext, const cell_t *para
 		return 0;
 
 	// Only SourceTV Master can record demos instantly
-	if (!hltvserver->IsMasterProxy())
+	if (!hltvserver->GetHLTVServer()->IsMasterProxy())
 		return 0;
 
 	// already recording
-	if (demorecorder->IsRecording())
+	if (hltvserver->GetDemoRecorder()->IsRecording())
 		return 0;
 
 	char *pFile;
@@ -512,7 +506,7 @@ static cell_t Native_StartRecording(IPluginContext *pContext, const cell_t *para
 	}
 #endif
 
-	demorecorder->StartRecording(pPath, false);
+	hltvserver->GetDemoRecorder()->StartRecording(pPath, false);
 
 	return 1;
 }
@@ -520,17 +514,14 @@ static cell_t Native_StartRecording(IPluginContext *pContext, const cell_t *para
 // native bool:SourceTV_StopRecording();
 static cell_t Native_StopRecording(IPluginContext *pContext, const cell_t *params)
 {
-	if (demorecorder == nullptr)
-		return 0;
-
-	if (!demorecorder->IsRecording())
+	if (!hltvserver->GetDemoRecorder()->IsRecording())
 		return 0;
 
 #if SOURCE_ENGINE == SE_CSGO
-	hltvserver->StopRecording(NULL);
+	hltvserver->GetDemoRecorder()->StopRecording(NULL);
 	// TODO: Stop recording on all other active hltvservers (tv_stoprecord in csgo does this)
 #else
-	demorecorder->StopRecording();
+	hltvserver->GetDemoRecorder()->StopRecording();
 #endif
 
 	return 1;
@@ -539,13 +530,10 @@ static cell_t Native_StopRecording(IPluginContext *pContext, const cell_t *param
 // native bool:SourceTV_GetDemoFileName(String:sFilename[], maxlen);
 static cell_t Native_GetDemoFileName(IPluginContext *pContext, const cell_t *params)
 {
-	if (demorecorder == nullptr)
+	if (!hltvserver->GetDemoRecorder()->IsRecording())
 		return 0;
 
-	if (!demorecorder->IsRecording())
-		return 0;
-
-	char *pDemoFile = (char *)demorecorder->GetDemoFile();
+	char *pDemoFile = (char *)hltvserver->GetDemoRecorder()->GetDemoFile();
 	if (!pDemoFile)
 		return 0;
 
@@ -557,13 +545,10 @@ static cell_t Native_GetDemoFileName(IPluginContext *pContext, const cell_t *par
 // native SourceTV_GetRecordingTick();
 static cell_t Native_GetRecordingTick(IPluginContext *pContext, const cell_t *params)
 {
-	if (demorecorder == nullptr)
+	if (!hltvserver->GetDemoRecorder()->IsRecording())
 		return -1;
 
-	if (!demorecorder->IsRecording())
-		return -1;
-
-	return demorecorder->GetRecordingTick();
+	return hltvserver->GetDemoRecorder()->GetRecordingTick();
 }
 
 // native bool:SourceTV_PrintToDemoConsole(const String:format[], any:...);
@@ -574,7 +559,7 @@ static cell_t Native_PrintToDemoConsole(IPluginContext *pContext, const cell_t *
 
 	if (!iserver)
 		return 0;
-	IClient *pClient = iserver->GetClient(hltvserver->GetHLTVSlot());
+	IClient *pClient = iserver->GetClient(hltvserver->GetHLTVServer()->GetHLTVSlot());
 	if (!pClient)
 		return 0;
 
@@ -742,6 +727,7 @@ const sp_nativeinfo_t sourcetv_natives[] =
 	{ "SourceTV_GetServerInstanceCount", Native_GetServerInstanceCount },
 	{ "SourceTV_SelectServerInstance", Native_SelectServerInstance },
 	{ "SourceTV_GetSelectedServerInstance", Native_GetSelectedServerInstance },
+	{ "SourceTV_IsActive", Native_IsActive },
 	{ "SourceTV_IsMasterProxy", Native_IsMasterProxy },
 	{ "SourceTV_GetServerIP", Native_GetServerIP },
 	{ "SourceTV_GetServerPort", Native_GetServerPort },

@@ -52,6 +52,7 @@
 #include "hltvclientwrapper.h"
 
 class INetMessage;
+class HLTVServerWrapper;
 
 extern ConVar tv_force_steamauth;
 
@@ -135,7 +136,6 @@ public: // IConCommandBaseAccessor
 
 public:
 	void SelectSourceTVServer(IHLTVServer *hltv);
-	IDemoRecorder *GetDemoRecorderPtr(IHLTVServer *hltvserver);
 
 private:
 #if SOURCE_ENGINE == SE_CSGO
@@ -143,16 +143,7 @@ private:
 	void OnRemoveHLTVServer_Post(IHLTVServer *hltv);
 #else
 	void OnSetHLTVServer_Post(IHLTVServer *hltv);
-	
-	bool OnHLTVBotNetChanSendNetMsg(INetMessage &msg, bool bForceReliable, bool bVoice);
-	void OnHLTVBotClientPrintf_Post(const char *buf);
 #endif
-	bool OnHLTVBotExecuteStringCommand(const char *s);
-	bool OnHLTVBotExecuteStringCommand_Post(const char *s);
-
-private:
-	void HookSourceTVServer(IHLTVServer *hltv);
-	void UnhookSourceTVServer(IHLTVServer *hltv);
 };
 
 /* Interfaces from SourceMod */
@@ -167,7 +158,7 @@ extern IGameEventManager2 *gameevents;
 extern ICvar *icvar;
 
 extern IHLTVDirector *hltvdirector;
-extern IHLTVServer *hltvserver;
-extern IDemoRecorder *demorecorder;
+extern HLTVServerWrapper *hltvserver;
+extern void *host_client;
 
 #endif // _INCLUDE_SOURCEMOD_EXTENSION_PROPER_H_

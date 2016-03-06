@@ -104,6 +104,9 @@ void CForwardManager::Init()
 	m_SpectatorDisconnectFwd = forwards->CreateForward("SourceTV_OnSpectatorDisconnect", ET_Ignore, 2, NULL, Param_Cell, Param_String);
 	m_SpectatorDisconnectedFwd = forwards->CreateForward("SourceTV_OnSpectatorDisconnected", ET_Ignore, 2, NULL, Param_Cell, Param_String);
 	m_SpectatorPutInServerFwd = forwards->CreateForward("SourceTV_OnSpectatorPutInServer", ET_Ignore, 1, NULL, Param_Cell);
+
+	m_ServerStartFwd = forwards->CreateForward("SourceTV_OnServerStart", ET_Ignore, 1, NULL, Param_Cell);
+	m_ServerShutdownFwd = forwards->CreateForward("SourceTV_OnServerShutdown", ET_Ignore, 1, NULL, Param_Cell);
 }
 
 void CForwardManager::Shutdown()
@@ -115,6 +118,9 @@ void CForwardManager::Shutdown()
 	forwards->ReleaseForward(m_SpectatorDisconnectFwd);
 	forwards->ReleaseForward(m_SpectatorDisconnectedFwd);
 	forwards->ReleaseForward(m_SpectatorPutInServerFwd);
+
+	forwards->ReleaseForward(m_ServerStartFwd);
+	forwards->ReleaseForward(m_ServerShutdownFwd);
 }
 
 void CForwardManager::HookRecorder(IDemoRecorder *recorder)
@@ -186,6 +192,18 @@ void CForwardManager::UnhookClient(IClient *client)
 		SH_REMOVE_MANUALHOOK(CBaseClient_ActivatePlayer, pGameClient, SH_MEMBER(this, &CForwardManager::OnSpectatorPutInServer), true);
 	}
 	SH_REMOVE_HOOK(IClient, Disconnect, client, SH_MEMBER(this, &CForwardManager::OnSpectatorDisconnect), false);
+}
+
+void CForwardManager::CallOnServerStart(IHLTVServer *server)
+{
+	m_ServerStartFwd->PushCell(0); // TODO: Get right hltvinstance
+	m_ServerStartFwd->Execute();
+}
+
+void CForwardManager::CallOnServerShutdown(IHLTVServer *server)
+{
+	m_ServerShutdownFwd->PushCell(0); // TODO: Get right hltvinstance
+	m_ServerShutdownFwd->Execute();
 }
 
 #if SOURCE_ENGINE == SE_CSGO

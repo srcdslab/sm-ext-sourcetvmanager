@@ -36,11 +36,34 @@ native SourceTV_SelectServerInstance(instance);
 native SourceTV_GetSelectedServerInstance();
 
 /**
+ * Called when a SourceTV is initialized.
+ *
+ * @param instance	The SourceTV instance number.
+ * @noreturn
+ */
+forward SourceTV_OnServerStart(instance);
+
+ /**
+  * Called when a SourceTV server instance is shutdown.
+  *
+  * @param instance	The SourceTV instance number.
+  * @noreturn
+  */
+forward SourceTV_OnServerShutdown(instance);
+
+/**
+ * Returns whether this SourceTV instance is currently broadcasting.
+ *
+ * @return	True if SourceTV instance is broadcasting, false otherwise.
+ */
+native bool:SourceTV_IsActive();
+
+/**
  * Returns whether this SourceTV instance is a master proxy or relay.
  *
  * @return	True if SourceTV instance is master proxy, false otherwise.
  */
-native SourceTV_IsMasterProxy();
+native bool:SourceTV_IsMasterProxy();
 
 /**
  * Get the local ip of the SourceTV server.
@@ -427,7 +450,10 @@ public __ext_stvmngr_SetNTVOptional()
 	MarkNativeAsOptional("SourceTV_GetServerInstanceCount");
 	MarkNativeAsOptional("SourceTV_SelectServerInstance");
 	MarkNativeAsOptional("SourceTV_GetSelectedServerInstance");
+	MarkNativeAsOptional("SourceTV_IsActive");
 	MarkNativeAsOptional("SourceTV_IsMasterProxy");
+	MarkNativeAsOptional("SourceTV_GetServerIP");
+	MarkNativeAsOptional("SourceTV_GetServerPort");
 	MarkNativeAsOptional("SourceTV_GetBotIndex");
 	MarkNativeAsOptional("SourceTV_GetLocalStats");
 	MarkNativeAsOptional("SourceTV_GetGlobalStats");

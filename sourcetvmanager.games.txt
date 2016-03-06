@@ -63,6 +63,12 @@
 				"linux"	"65"
 			}
 			
+			"CHLTVServer::Shutdown"
+			{
+				"windows"	"45"
+				"linux"	"46"
+			}
+			
 			"CHLTVDirector::m_iPVSEntity"
 			{
 				"windows"	"32"
@@ -180,6 +186,12 @@
 			{
 				"windows"	"16"
 				"linux"	"56"
+			}
+			
+			"CHLTVServer::Shutdown"
+			{
+				"windows"	"41"
+				"linux"	"42"
 			}
 			
 			"CHLTVDirector::m_iPVSEntity"

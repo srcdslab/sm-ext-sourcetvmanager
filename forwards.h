@@ -69,6 +69,9 @@ public:
 	void HookServer(IServer *server);
 	void UnhookServer(IServer *server);
 
+	void CallOnServerStart(IHLTVServer *server);
+	void CallOnServerShutdown(IHLTVServer *server);
+
 private:
 	void HookClient(IClient *client);
 	void UnhookClient(IClient *client);
@@ -95,6 +98,9 @@ private:
 	IForward *m_SpectatorDisconnectFwd;
 	IForward *m_SpectatorDisconnectedFwd;
 	IForward *m_SpectatorPutInServerFwd;
+
+	IForward *m_ServerStartFwd;
+	IForward *m_ServerShutdownFwd;
 
 	bool m_bHasClientConnectOffset = false;
 	bool m_bHasRejectConnectionOffset = false;

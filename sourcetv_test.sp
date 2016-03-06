@@ -57,6 +57,16 @@ public bool:SourceTV_OnSpectatorPreConnect(const String:name[], String:password[
 	return true;
 }
 
+public SourceTV_OnServerStart(instance)
+{
+	PrintToServer("SourceTV instance %d started.", instance);
+}
+
+public SourceTV_OnServerShutdown(instance)
+{
+	PrintToServer("SourceTV instance %d shutdown.", instance);
+}
+
 public SourceTV_OnSpectatorConnected(client)
 {
 	PrintToServer("SourceTV client %d connected. (isconnected %d)", client, SourceTV_IsClientConnected(client));
