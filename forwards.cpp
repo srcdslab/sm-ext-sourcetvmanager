@@ -31,6 +31,7 @@
 
 #include "extension.h"
 #include "forwards.h"
+#include "hltvserverwrapper.h"
 
 CForwardManager g_pSTVForwards;
 
@@ -196,13 +197,13 @@ void CForwardManager::UnhookClient(IClient *client)
 
 void CForwardManager::CallOnServerStart(IHLTVServer *server)
 {
-	m_ServerStartFwd->PushCell(0); // TODO: Get right hltvinstance
+	m_ServerStartFwd->PushCell(g_HLTVServers.GetInstanceNumber(server));
 	m_ServerStartFwd->Execute();
 }
 
 void CForwardManager::CallOnServerShutdown(IHLTVServer *server)
 {
-	m_ServerShutdownFwd->PushCell(0); // TODO: Get right hltvinstance
+	m_ServerShutdownFwd->PushCell(g_HLTVServers.GetInstanceNumber(server));
 	m_ServerShutdownFwd->Execute();
 }
 
@@ -365,7 +366,13 @@ void CForwardManager::OnStartRecording_Post(const char *filename, bool bContinuo
 	if (m_StartRecordingFwd->GetFunctionCount() == 0)
 		RETURN_META(MRES_IGNORED);
 
-	m_StartRecordingFwd->PushCell(0); // TODO: Get current hltvserver index
+	IDemoRecorder *recorder = META_IFACEPTR(IDemoRecorder);
+	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(recorder);
+	int instance = -1;
+	if (wrapper)
+		instance = wrapper->GetInstanceNumber();
+
+	m_StartRecordingFwd->PushCell(instance);
 	m_StartRecordingFwd->PushString(filename);
 	m_StartRecordingFwd->Execute();
 
@@ -387,7 +394,12 @@ void CForwardManager::OnStopRecording_Post()
 
 	char *pDemoFile = (char *)recorder->GetDemoFile();
 	
-	m_StopRecordingFwd->PushCell(0); // TODO: Get current hltvserver index
+	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(recorder);
+	int instance = -1;
+	if (wrapper)
+		instance = wrapper->GetInstanceNumber();
+
+	m_StopRecordingFwd->PushCell(instance);
 	m_StopRecordingFwd->PushString(pDemoFile);
 	m_StopRecordingFwd->PushCell(recorder->GetRecordingTick());
 	m_StopRecordingFwd->Execute();

@@ -73,6 +73,7 @@ public:
 	void AddServer(IHLTVServer *hltvserver);
 	void RemoveServer(IHLTVServer *hltvserver, bool bInformPlugins);
 	HLTVServerWrapper *GetWrapper(IHLTVServer *hltvserver);
+	HLTVServerWrapper *GetWrapper(IDemoRecorder *demorecorder);
 	int GetInstanceNumber(IHLTVServer *hltvserver);
 
 	IDemoRecorder *GetDemoRecorderPtr(IHLTVServer *hltv);

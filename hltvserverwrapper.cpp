@@ -277,6 +277,17 @@ HLTVServerWrapper *HLTVServerWrapperManager::GetWrapper(IHLTVServer *hltvserver)
 	return nullptr;
 }
 
+HLTVServerWrapper *HLTVServerWrapperManager::GetWrapper(IDemoRecorder *demorecorder)
+{
+	for (unsigned int i = 0; i < m_HLTVServers.length(); i++)
+	{
+		HLTVServerWrapper *wrapper = m_HLTVServers[i];
+		if (wrapper->GetDemoRecorder() == demorecorder)
+			return wrapper;
+	}
+	return nullptr;
+}
+
 int HLTVServerWrapperManager::GetInstanceNumber(IHLTVServer *hltvserver)
 {
 #if SOURCE_ENGINE == SE_CSGO
