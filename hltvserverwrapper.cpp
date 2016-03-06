@@ -65,12 +65,34 @@ int HLTVServerWrapper::GetInstanceNumber()
 	return g_HLTVServers.GetInstanceNumber(m_HLTVServer);
 }
 
+HLTVClientWrapper *HLTVServerWrapper::GetClient(int index)
+{
+	// Grow the vector with null pointers
+	// There might have been clients with lower indexes before we were loaded.
+	if (m_Clients.length() < (size_t)index)
+	{
+		int start = m_Clients.length();
+		m_Clients.resize(index);
+		for (int i = start; i < index; i++)
+		{
+			m_Clients[i] = nullptr;
+		}
+	}
+
+	if (!m_Clients[index - 1])
+	{
+		m_Clients[index - 1] = new HLTVClientWrapper();
+	}
+
+	return m_Clients[index - 1];
+}
+
 void HLTVServerWrapper::Hook()
 {
 	if (!m_Connected)
 		return;
 
-	g_pSTVForwards.HookServer(m_HLTVServer->GetBaseServer());
+	g_pSTVForwards.HookServer(this);
 	g_pSTVForwards.HookRecorder(m_DemoRecorder);
 
 	if (g_HLTVServers.HasShutdownOffset())
@@ -95,7 +117,7 @@ void HLTVServerWrapper::Unhook()
 	if (!m_Connected)
 		return;
 
-	g_pSTVForwards.UnhookServer(m_HLTVServer->GetBaseServer());
+	g_pSTVForwards.UnhookServer(this);
 	g_pSTVForwards.UnhookRecorder(m_DemoRecorder);
 
 	if (g_HLTVServers.HasShutdownOffset())
@@ -272,6 +294,17 @@ HLTVServerWrapper *HLTVServerWrapperManager::GetWrapper(IHLTVServer *hltvserver)
 	{
 		HLTVServerWrapper *wrapper = m_HLTVServers[i];
 		if (wrapper->GetHLTVServer() == hltvserver)
+			return wrapper;
+	}
+	return nullptr;
+}
+
+HLTVServerWrapper *HLTVServerWrapperManager::GetWrapper(IServer *server)
+{
+	for (unsigned int i = 0; i < m_HLTVServers.length(); i++)
+	{
+		HLTVServerWrapper *wrapper = m_HLTVServers[i];
+		if (wrapper->GetBaseServer() == server)
 			return wrapper;
 	}
 	return nullptr;

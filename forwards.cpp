@@ -136,8 +136,9 @@ void CForwardManager::UnhookRecorder(IDemoRecorder *recorder)
 	SH_REMOVE_HOOK(IDemoRecorder, StopRecording, recorder, SH_MEMBER(this, &CForwardManager::OnStopRecording_Post), true);
 }
 
-void CForwardManager::HookServer(IServer *server)
+void CForwardManager::HookServer(HLTVServerWrapper *wrapper)
 {
+	IServer *server = wrapper->GetBaseServer();
 	if (m_bHasClientConnectOffset)
 		SH_ADD_MANUALHOOK(CHLTVServer_ConnectClient, server, SH_MEMBER(this, &CForwardManager::OnSpectatorConnect), false);
 	
@@ -153,13 +154,14 @@ void CForwardManager::HookServer(IServer *server)
 			HookClient(client);
 			// Ip and password unknown :(
 			// Could add more gamedata to fetch it if people really lateload the extension and expect it to work :B
-			g_HLTVClientManager.GetClient(i + 1)->Initialize("", "", client);
+			wrapper->GetClient(i + 1)->Initialize("", "", client);
 		}
 	}
 }
 
-void CForwardManager::UnhookServer(IServer *server)
+void CForwardManager::UnhookServer(HLTVServerWrapper *wrapper)
 {
+	IServer *server = wrapper->GetBaseServer();
 	if (m_bHasClientConnectOffset)
 		SH_REMOVE_MANUALHOOK(CHLTVServer_ConnectClient, server, SH_MEMBER(this, &CForwardManager::OnSpectatorConnect), false);
 
@@ -297,8 +299,12 @@ IClient *CForwardManager::OnSpectatorConnect(netadr_t & address, int nProtocol, 
 
 	HookClient(client);
 
-	HLTVClientWrapper *wrapper = g_HLTVClientManager.GetClient(client->GetPlayerSlot() + 1);
-	wrapper->Initialize(ipString, pchPassword, client);
+	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(server);
+	if (wrapper)
+	{
+		HLTVClientWrapper *clientWrapper = wrapper->GetClient(client->GetPlayerSlot() + 1);
+		clientWrapper->Initialize(ipString, pchPassword, client);
+	}
 
 	m_SpectatorConnectedFwd->PushCell(client->GetPlayerSlot() + 1);
 	m_SpectatorConnectedFwd->Execute();

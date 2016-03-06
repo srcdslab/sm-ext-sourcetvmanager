@@ -619,7 +619,7 @@ static cell_t Native_IsClientConnected(IPluginContext *pContext, const cell_t *p
 		return 0;
 	}
 
-	HLTVClientWrapper *pClient = g_HLTVClientManager.GetClient(client);
+	HLTVClientWrapper *pClient = hltvserver->GetClient(client);
 	return pClient->IsConnected();
 }
 
@@ -636,7 +636,7 @@ static cell_t Native_GetSpectatorName(IPluginContext *pContext, const cell_t *pa
 		return 0;
 	}
 
-	HLTVClientWrapper *pClient = g_HLTVClientManager.GetClient(client);
+	HLTVClientWrapper *pClient = hltvserver->GetClient(client);
 	if (!pClient->IsConnected())
 	{
 		pContext->ReportError("Client %d is not connected.", client);
@@ -660,7 +660,7 @@ static cell_t Native_GetSpectatorIP(IPluginContext *pContext, const cell_t *para
 		return 0;
 	}
 
-	HLTVClientWrapper *pClient = g_HLTVClientManager.GetClient(client);
+	HLTVClientWrapper *pClient = hltvserver->GetClient(client);
 	if (!pClient->IsConnected())
 	{
 		pContext->ReportError("Client %d is not connected.", client);
@@ -684,7 +684,7 @@ static cell_t Native_GetSpectatorPassword(IPluginContext *pContext, const cell_t
 		return 0;
 	}
 
-	HLTVClientWrapper *pClient = g_HLTVClientManager.GetClient(client);
+	HLTVClientWrapper *pClient = hltvserver->GetClient(client);
 	if (!pClient->IsConnected())
 	{
 		pContext->ReportError("Client %d is not connected.", client);
@@ -708,7 +708,7 @@ static cell_t Native_KickClient(IPluginContext *pContext, const cell_t *params)
 		return 0;
 	}
 
-	HLTVClientWrapper *pClient = g_HLTVClientManager.GetClient(client);
+	HLTVClientWrapper *pClient = hltvserver->GetClient(client);
 	if (!pClient->IsConnected())
 	{
 		pContext->ReportError("Client %d is not connected.", client);

@@ -44,6 +44,7 @@ public:
 	IHLTVServer *GetHLTVServer();
 	IServer *GetBaseServer();
 	IDemoRecorder *GetDemoRecorder();
+	HLTVClientWrapper *GetClient(int index);
 	int GetInstanceNumber();
 
 private:
@@ -63,6 +64,7 @@ private:
 	bool m_Connected = false;
 	IHLTVServer *m_HLTVServer = nullptr;
 	IDemoRecorder *m_DemoRecorder = nullptr;
+	ke::Vector<ke::AutoPtr<HLTVClientWrapper>> m_Clients;
 };
 
 class HLTVServerWrapperManager
@@ -73,6 +75,7 @@ public:
 	void AddServer(IHLTVServer *hltvserver);
 	void RemoveServer(IHLTVServer *hltvserver, bool bInformPlugins);
 	HLTVServerWrapper *GetWrapper(IHLTVServer *hltvserver);
+	HLTVServerWrapper *GetWrapper(IServer *server);
 	HLTVServerWrapper *GetWrapper(IDemoRecorder *demorecorder);
 	int GetInstanceNumber(IHLTVServer *hltvserver);
 

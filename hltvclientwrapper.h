@@ -56,16 +56,4 @@ private:
 	ke::AString m_Password;
 	IClient *m_Client;
 };
-
-class HLTVClientManager {
-
-public:
-	HLTVClientWrapper *GetClient(int index);
-
-private:
-	ke::Vector<ke::AutoPtr<HLTVClientWrapper>> m_Clients;
-};
-
-extern HLTVClientManager g_HLTVClientManager;
-
 #endif // _INCLUDE_SOURCEMOD_EXTENSION_HLTVCLIENT_H_
