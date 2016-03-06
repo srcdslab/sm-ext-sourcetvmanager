@@ -189,7 +189,7 @@ public Action:Cmd_Spectators(client, args)
 		
 		SourceTV_GetSpectatorName(i, sName, sizeof(sName));
 		SourceTV_GetSpectatorIP(i, sIP, sizeof(sIP));
-		ReplyToCommand(client, "Client %d: %s - %s", i, sName, sIP);
+		ReplyToCommand(client, "Client %d%s: %s - %s", i, (SourceTV_IsClientProxy(i)?" (RELAY)":""), sName, sIP);
 	}
 	return Plugin_Handled;
 }

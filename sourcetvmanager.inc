@@ -333,6 +333,15 @@ native SourceTV_GetClientCount();
 native bool:SourceTV_IsClientConnected(client);
 
 /**
+ * Returns if the spectator is a relay proxy.
+ *
+ * @param client	The spectator client index.
+ * @return	True if client is a proxy, false otherwise.
+ * @error	Invalid client index.
+ */
+native bool:SourceTV_IsClientProxy(client);
+
+/**
  * Get the name of a SourceTV spectator client.
  *
  * @param client	The spectator client index.
@@ -479,6 +488,7 @@ public __ext_stvmngr_SetNTVOptional()
 	MarkNativeAsOptional("SourceTV_GetSpectatorName");
 	MarkNativeAsOptional("SourceTV_GetSpectatorIP");
 	MarkNativeAsOptional("SourceTV_GetSpectatorPassword");
+	MarkNativeAsOptional("SourceTV_IsClientProxy");
 	MarkNativeAsOptional("SourceTV_KickClient");
 }
 #endif
