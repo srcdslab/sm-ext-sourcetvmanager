@@ -93,7 +93,8 @@ void HLTVServerWrapper::Hook()
 		return;
 
 	g_pSTVForwards.HookServer(this);
-	g_pSTVForwards.HookRecorder(m_DemoRecorder);
+	if (m_DemoRecorder)
+		g_pSTVForwards.HookRecorder(m_DemoRecorder);
 
 	if (g_HLTVServers.HasShutdownOffset())
 		SH_ADD_MANUALHOOK(CHLTVServer_Shutdown, m_HLTVServer->GetBaseServer(), SH_MEMBER(this, &HLTVServerWrapper::OnHLTVServerShutdown), false);
@@ -118,7 +119,8 @@ void HLTVServerWrapper::Unhook()
 		return;
 
 	g_pSTVForwards.UnhookServer(this);
-	g_pSTVForwards.UnhookRecorder(m_DemoRecorder);
+	if (m_DemoRecorder)
+		g_pSTVForwards.UnhookRecorder(m_DemoRecorder);
 
 	if (g_HLTVServers.HasShutdownOffset())
 		SH_REMOVE_MANUALHOOK(CHLTVServer_Shutdown, m_HLTVServer->GetBaseServer(), SH_MEMBER(this, &HLTVServerWrapper::OnHLTVServerShutdown), false);
@@ -359,8 +361,12 @@ IDemoRecorder *HLTVServerWrapperManager::GetDemoRecorderPtr(IHLTVServer *hltv)
 		return (IDemoRecorder *)((intptr_t)hltv + offset);
 #else
 		IServer *baseServer = hltv->GetBaseServer();
+#ifndef WIN32
+		return (IDemoRecorder *)((intptr_t)baseServer + offset - 4);
+#else
 		return (IDemoRecorder *)((intptr_t)baseServer + offset);
-#endif
+#endif // WIN32
+#endif // SOURCE_ENGINE == SE_CSGO
 	}
 	else
 	{

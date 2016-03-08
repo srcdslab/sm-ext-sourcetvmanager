@@ -66,8 +66,8 @@ public:
 	void HookRecorder(IDemoRecorder *recorder);
 	void UnhookRecorder(IDemoRecorder *recorder);
 
-	void HookServer(IServer *server);
-	void UnhookServer(IServer *server);
+	void HookServer(HLTVServerWrapper *server);
+	void UnhookServer(HLTVServerWrapper *server);
 
 	void CallOnServerStart(IHLTVServer *server);
 	void CallOnServerShutdown(IHLTVServer *server);
