@@ -111,6 +111,20 @@
 				"linux"	"@_ZN11CHLTVServer24GetRecordingDemoFilenameEv"
 				"windows" "\x81\xC1\x2A\x2A\x2A\x2A\x8B\x01\xFF\x20"
 			}
+			
+			// StartRecording and StopRecording are virtual, but get called directly in the linux binary..
+			// Need to add a detour.
+			"CHLTVDemoRecorder::StartRecording"
+			{
+				"library"	"engine"
+				"linux"	"@_ZN17CHLTVDemoRecorder14StartRecordingEPKcb"
+			}
+			
+			"CHLTVDemoRecorder::StopRecording"
+			{
+				"library"	"engine"
+				"linux"	"@_ZN17CHLTVDemoRecorder13StopRecordingEPK9CGameInfo"
+			}
 		}
 	}
 	"cstrike"
@@ -236,6 +250,20 @@
 				"linux"	"@_ZN11CHLTVServer8ShutdownEv"
 				// "HLTV server shutting down"
 				"windows"	"\x56\x8B\xF1\x8B\x86\x2A\x2A\x2A\x2A\x8D\x8E\x2A\x2A\x2A\x2A\xFF\x50\x2A\x8B\x86\x2A\x2A\x2A\x2A\x8D\x8E"
+			}
+			
+			// StartRecording and StopRecording are virtual, but get called directly in the linux binary..
+			// Need to add a detour.
+			"CHLTVDemoRecorder::StartRecording"
+			{
+				"library"	"engine"
+				"linux"	"@_ZN17CHLTVDemoRecorder14StartRecordingEPKcb"
+			}
+			
+			"CHLTVDemoRecorder::StopRecording"
+			{
+				"library"	"engine"
+				"linux"	"@_ZN17CHLTVDemoRecorder13StopRecordingEv"
 			}
 		}
 	}

@@ -69,8 +69,18 @@ public:
 	void HookServer(HLTVServerWrapper *server);
 	void UnhookServer(HLTVServerWrapper *server);
 
+#ifndef WIN32
+	bool CreateStartRecordingDetour();
+	void RemoveStartRecordingDetour();
+	bool CreateStopRecordingDetour();
+	void RemoveStopRecordingDetour();
+#endif
+
 	void CallOnServerStart(IHLTVServer *server);
 	void CallOnServerShutdown(IHLTVServer *server);
+
+	void CallOnStartRecording(IDemoRecorder *recorder, const char *filename, bool bContinuously);
+	void CallOnStopRecording(IDemoRecorder *recorder);
 
 private:
 	void HookClient(IClient *client);
@@ -106,6 +116,14 @@ private:
 	bool m_bHasRejectConnectionOffset = false;
 	bool m_bHasGetChallengeTypeOffset = false;
 	bool m_bHasActivatePlayerOffset = false;
+
+	// Only need the detours on linux. Windows always uses its vtables..
+#ifndef WIN32
+	bool m_bStartRecordingDetoured = false;
+	CDetour *m_DStartRecording = nullptr;
+	bool m_bStopRecordingDetoured = false;
+	CDetour *m_DStopRecording = nullptr;
+#endif
 };
 
 extern CForwardManager g_pSTVForwards;

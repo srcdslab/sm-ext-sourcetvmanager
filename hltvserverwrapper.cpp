@@ -261,6 +261,11 @@ void HLTVServerWrapperManager::InitHooks()
 
 void HLTVServerWrapperManager::ShutdownHooks()
 {
+#ifndef WIN32
+	g_pSTVForwards.RemoveStartRecordingDetour();
+	g_pSTVForwards.RemoveStopRecordingDetour();
+#endif
+
 #if SOURCE_ENGINE != SE_CSGO
 	if (m_bSendNetMsgHooked)
 	{
@@ -272,6 +277,12 @@ void HLTVServerWrapperManager::ShutdownHooks()
 
 void HLTVServerWrapperManager::AddServer(IHLTVServer *hltvserver)
 {
+#ifndef WIN32
+	// Create the detours once the first sourcetv server is created.
+	g_pSTVForwards.CreateStartRecordingDetour();
+	g_pSTVForwards.CreateStopRecordingDetour();
+#endif
+
 	HLTVServerWrapper *wrapper = new HLTVServerWrapper(hltvserver);
 	m_HLTVServers.append(wrapper);
 }

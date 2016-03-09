@@ -35,12 +35,15 @@
 
 CForwardManager g_pSTVForwards;
 
+// Only windows always uses the vtable for these. Linux does direct calls, so we use detours there.
+#ifdef WIN32
 SH_DECL_HOOK2_void(IDemoRecorder, StartRecording, SH_NOATTRIB, 0, const char *, bool)
 #if SOURCE_ENGINE == SE_CSGO
 SH_DECL_HOOK1_void(IDemoRecorder, StopRecording, SH_NOATTRIB, 0, CGameInfo const *)
 #else
 SH_DECL_HOOK0_void(IDemoRecorder, StopRecording, SH_NOATTRIB, 0)
-#endif
+#endif // SOURCE_ENGINE == SE_CSGO
+#endif // !WIN32
 
 #if SOURCE_ENGINE == SE_CSGO
 SH_DECL_MANUALHOOK13(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, const netadr_t &, int, int, int, const char *, const char *, const char *, int, CUtlVector<NetMsg_SplitPlayerConnect *> &, bool, CrossPlayPlatform_t, const unsigned char *, int);
@@ -126,14 +129,18 @@ void CForwardManager::Shutdown()
 
 void CForwardManager::HookRecorder(IDemoRecorder *recorder)
 {
+#ifdef WIN32
 	SH_ADD_HOOK(IDemoRecorder, StartRecording, recorder, SH_MEMBER(this, &CForwardManager::OnStartRecording_Post), true);
 	SH_ADD_HOOK(IDemoRecorder, StopRecording, recorder, SH_MEMBER(this, &CForwardManager::OnStopRecording_Post), true);
+#endif
 }
 
 void CForwardManager::UnhookRecorder(IDemoRecorder *recorder)
 {
+#ifdef WIN32
 	SH_REMOVE_HOOK(IDemoRecorder, StartRecording, recorder, SH_MEMBER(this, &CForwardManager::OnStartRecording_Post), true);
 	SH_REMOVE_HOOK(IDemoRecorder, StopRecording, recorder, SH_MEMBER(this, &CForwardManager::OnStopRecording_Post), true);
+#endif
 }
 
 void CForwardManager::HookServer(HLTVServerWrapper *wrapper)
@@ -367,21 +374,12 @@ void CForwardManager::OnSpectatorPutInServer()
 	RETURN_META(MRES_IGNORED);
 }
 
+
+// These two hooks are actually only hooked on windows.
 void CForwardManager::OnStartRecording_Post(const char *filename, bool bContinuously)
 {
-	if (m_StartRecordingFwd->GetFunctionCount() == 0)
-		RETURN_META(MRES_IGNORED);
-
 	IDemoRecorder *recorder = META_IFACEPTR(IDemoRecorder);
-	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(recorder);
-	int instance = -1;
-	if (wrapper)
-		instance = wrapper->GetInstanceNumber();
-
-	m_StartRecordingFwd->PushCell(instance);
-	m_StartRecordingFwd->PushString(filename);
-	m_StartRecordingFwd->Execute();
-
+	CallOnStartRecording(recorder, filename, bContinuously);
 	RETURN_META(MRES_IGNORED);
 }
 
@@ -391,12 +389,33 @@ void CForwardManager::OnStopRecording_Post(CGameInfo const *info)
 void CForwardManager::OnStopRecording_Post()
 #endif
 {
-	if (m_StopRecordingFwd->GetFunctionCount() == 0)
-		RETURN_META(MRES_IGNORED);
-
 	IDemoRecorder *recorder = META_IFACEPTR(IDemoRecorder);
+	CallOnStopRecording(recorder);
+	RETURN_META(MRES_IGNORED);
+}
+
+void CForwardManager::CallOnStartRecording(IDemoRecorder *recorder, const char *filename, bool bContinuously)
+{
+	if (m_StartRecordingFwd->GetFunctionCount() == 0)
+		return;
+
+	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(recorder);
+	int instance = -1;
+	if (wrapper)
+		instance = wrapper->GetInstanceNumber();
+
+	m_StartRecordingFwd->PushCell(instance);
+	m_StartRecordingFwd->PushString(filename);
+	m_StartRecordingFwd->Execute();
+}
+
+void CForwardManager::CallOnStopRecording(IDemoRecorder *recorder)
+{
+	if (m_StopRecordingFwd->GetFunctionCount() == 0)
+		return;
+
 	if (!recorder->IsRecording())
-		RETURN_META(MRES_IGNORED);
+		return;
 
 	char *pDemoFile = (char *)recorder->GetDemoFile();
 	
@@ -409,6 +428,87 @@ void CForwardManager::OnStopRecording_Post()
 	m_StopRecordingFwd->PushString(pDemoFile);
 	m_StopRecordingFwd->PushCell(recorder->GetRecordingTick());
 	m_StopRecordingFwd->Execute();
-
-	RETURN_META(MRES_IGNORED);
 }
+
+// Only need to detour these on Linux. Windows always uses the vtable.
+#ifndef WIN32
+DETOUR_DECL_MEMBER2(DetourHLTVStartRecording, void, const char *, filename, bool, bContinuously)
+{
+	// Call the original first.
+	DETOUR_MEMBER_CALL(DetourHLTVStartRecording)(filename, bContinuously);
+	
+	IDemoRecorder *recorder = (IDemoRecorder *)this;
+	g_pSTVForwards.CallOnStartRecording(recorder, filename, bContinuously);
+}
+
+#if SOURCE_ENGINE == SE_CSGO
+DETOUR_DECL_MEMBER1(DetourHLTVStopRecording, void, CGameInfo const *, info)
+#else
+DETOUR_DECL_MEMBER0(DetourHLTVStopRecording, void)
+#endif
+{
+	// Call the original first.
+#if SOURCE_ENGINE == SE_CSGO
+	DETOUR_MEMBER_CALL(DetourHLTVStopRecording)(info);
+#else
+	DETOUR_MEMBER_CALL(DetourHLTVStopRecording)();
+#endif
+
+	IDemoRecorder *recorder = (IDemoRecorder *)this;
+	g_pSTVForwards.CallOnStopRecording(recorder);
+}
+
+bool CForwardManager::CreateStartRecordingDetour()
+{
+	if (m_bStartRecordingDetoured)
+		return true;
+
+	m_DStartRecording = DETOUR_CREATE_MEMBER(DetourHLTVStartRecording, "CHLTVDemoRecorder::StartRecording");
+
+	if (m_DStartRecording != nullptr)
+	{
+		m_DStartRecording->EnableDetour();
+		m_bStartRecordingDetoured = true;
+		return true;
+	}
+	smutils->LogError(myself, "CHLTVDemoRecorder::StartRecording detour could not be initialized.");
+	return false;
+}
+
+void CForwardManager::RemoveStartRecordingDetour()
+{
+	if (m_DStartRecording != nullptr)
+	{
+		m_DStartRecording->Destroy();
+		m_DStartRecording = nullptr;
+	}
+	m_bStartRecordingDetoured = false;
+}
+
+bool CForwardManager::CreateStopRecordingDetour()
+{
+	if (m_bStopRecordingDetoured)
+		return true;
+
+	m_DStopRecording = DETOUR_CREATE_MEMBER(DetourHLTVStopRecording, "CHLTVDemoRecorder::StopRecording");
+
+	if (m_DStopRecording != nullptr)
+	{
+		m_DStopRecording->EnableDetour();
+		m_bStopRecordingDetoured = true;
+		return true;
+	}
+	smutils->LogError(myself, "CHLTVDemoRecorder::StartRecording detour could not be initialized.");
+	return false;
+}
+
+void CForwardManager::RemoveStopRecordingDetour()
+{
+	if (m_DStopRecording != nullptr)
+	{
+		m_DStopRecording->Destroy();
+		m_DStopRecording = nullptr;
+	}
+	m_bStopRecordingDetoured = false;
+}
+#endif
