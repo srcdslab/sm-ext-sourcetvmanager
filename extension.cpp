@@ -69,7 +69,7 @@ SMEXT_LINK(&g_STVManager);
 
 extern const sp_nativeinfo_t sourcetv_natives[];
 
-ConVar tv_force_steamauth("tv_force_steamauth", "1", FCVAR_NONE, "Validate SourceTV clients with Steam.");
+ConVar tv_force_steamauth("tv_force_steamauth", "0", FCVAR_NONE, "Validate SourceTV clients with Steam.");
 
 bool SourceTVManager::SDK_OnLoad(char *error, size_t maxlength, bool late)
 {
