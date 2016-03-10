@@ -131,7 +131,7 @@ void CForwardManager::HookRecorder(IDemoRecorder *recorder)
 {
 #ifdef WIN32
 	SH_ADD_HOOK(IDemoRecorder, StartRecording, recorder, SH_MEMBER(this, &CForwardManager::OnStartRecording_Post), true);
-	SH_ADD_HOOK(IDemoRecorder, StopRecording, recorder, SH_MEMBER(this, &CForwardManager::OnStopRecording_Post), true);
+	SH_ADD_HOOK(IDemoRecorder, StopRecording, recorder, SH_MEMBER(this, &CForwardManager::OnStopRecording), false);
 #endif
 }
 
@@ -139,7 +139,7 @@ void CForwardManager::UnhookRecorder(IDemoRecorder *recorder)
 {
 #ifdef WIN32
 	SH_REMOVE_HOOK(IDemoRecorder, StartRecording, recorder, SH_MEMBER(this, &CForwardManager::OnStartRecording_Post), true);
-	SH_REMOVE_HOOK(IDemoRecorder, StopRecording, recorder, SH_MEMBER(this, &CForwardManager::OnStopRecording_Post), true);
+	SH_REMOVE_HOOK(IDemoRecorder, StopRecording, recorder, SH_MEMBER(this, &CForwardManager::OnStopRecording), false);
 #endif
 }
 
@@ -384,9 +384,9 @@ void CForwardManager::OnStartRecording_Post(const char *filename, bool bContinuo
 }
 
 #if SOURCE_ENGINE == SE_CSGO
-void CForwardManager::OnStopRecording_Post(CGameInfo const *info)
+void CForwardManager::OnStopRecording(CGameInfo const *info)
 #else
-void CForwardManager::OnStopRecording_Post()
+void CForwardManager::OnStopRecording()
 #endif
 {
 	IDemoRecorder *recorder = META_IFACEPTR(IDemoRecorder);
@@ -447,15 +447,14 @@ DETOUR_DECL_MEMBER1(DetourHLTVStopRecording, void, CGameInfo const *, info)
 DETOUR_DECL_MEMBER0(DetourHLTVStopRecording, void)
 #endif
 {
-	// Call the original first.
+	IDemoRecorder *recorder = (IDemoRecorder *)this;
+	g_pSTVForwards.CallOnStopRecording(recorder);
+
 #if SOURCE_ENGINE == SE_CSGO
 	DETOUR_MEMBER_CALL(DetourHLTVStopRecording)(info);
 #else
 	DETOUR_MEMBER_CALL(DetourHLTVStopRecording)();
-#endif
-
-	IDemoRecorder *recorder = (IDemoRecorder *)this;
-	g_pSTVForwards.CallOnStopRecording(recorder);
+#endif	
 }
 
 bool CForwardManager::CreateStartRecordingDetour()
@@ -498,7 +497,7 @@ bool CForwardManager::CreateStopRecordingDetour()
 		m_bStopRecordingDetoured = true;
 		return true;
 	}
-	smutils->LogError(myself, "CHLTVDemoRecorder::StartRecording detour could not be initialized.");
+	smutils->LogError(myself, "CHLTVDemoRecorder::StopRecording detour could not be initialized.");
 	return false;
 }
 

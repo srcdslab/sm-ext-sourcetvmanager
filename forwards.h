@@ -89,10 +89,10 @@ private:
 private:
 	void OnStartRecording_Post(const char *filename, bool bContinuously);
 #if SOURCE_ENGINE == SE_CSGO
-	void OnStopRecording_Post(CGameInfo const *info);
+	void OnStopRecording(CGameInfo const *info);
 	IClient *OnSpectatorConnect(const netadr_t & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown);
 #else
-	void OnStopRecording_Post();
+	void OnStopRecording();
 	IClient *OnSpectatorConnect(netadr_t &address, int nProtocol, int iChallenge, int iClientChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie);
 #endif
 	void OnSpectatorDisconnect(const char *reason);
