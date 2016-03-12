@@ -271,7 +271,7 @@ static cell_t Native_BroadcastScreenMessage(IPluginContext *pContext, const cell
 
 	int ret = 1;
 	bool bLocalOnly = params[1] != 0;
-	if (bLocalOnly)
+	if (!bLocalOnly)
 		hltvserver->GetHLTVServer()->BroadcastEvent(msg);
 	else
 		ret = BroadcastEventLocal(hltvserver->GetHLTVServer(), msg, false);
@@ -327,7 +327,7 @@ static cell_t Native_BroadcastChatMessage(IPluginContext *pContext, const cell_t
 
 	int ret = 1;
 	bool bLocalOnly = params[1] != 0;
-	if (bLocalOnly)
+	if (!bLocalOnly)
 		hltvserver->GetHLTVServer()->BroadcastEvent(msg);
 	else
 		ret = BroadcastEventLocal(hltvserver->GetHLTVServer(), msg, false);
