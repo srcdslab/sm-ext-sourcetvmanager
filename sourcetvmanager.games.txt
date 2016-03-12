@@ -127,8 +127,13 @@
 			}
 		}
 	}
-	"cstrike"
+	"#default"
 	{
+		"#supported"	
+		{
+			"engine"	"orangebox_valve"
+		}
+		
 		"Addresses"
 		{
 			"host_client"
