@@ -174,7 +174,12 @@
 			"CBaseClient::m_NetChannel"
 			{
 				"windows"	"192"
-				"linux"	"164"
+				"linux"	"196"
+			}
+			
+			"CGameClient::ClientPrintf"
+			{
+				"linux"	"24"
 			}
 			
 			"CBaseServer::BroadcastPrintf"

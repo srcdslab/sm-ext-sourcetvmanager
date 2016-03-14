@@ -57,7 +57,9 @@ private:
 	void OnHLTVServerShutdown();
 
 #if SOURCE_ENGINE != SE_CSGO
-	void OnHLTVBotClientPrintf_Post(const char *buf);
+	void OnIClient_ClientPrintf_Post(const char *buf);
+	void OnCGameClient_ClientPrintf_Post(const char *buf);
+	void HandleClientPrintf(IClient *pClient, const char* buf);
 #endif
 
 private:
@@ -80,6 +82,7 @@ public:
 	int GetInstanceNumber(IHLTVServer *hltvserver);
 
 	IDemoRecorder *GetDemoRecorderPtr(IHLTVServer *hltv);
+	bool HasClientPrintfOffset();
 	bool HasShutdownOffset();
 
 #if SOURCE_ENGINE != SE_CSGO
@@ -90,6 +93,7 @@ private:
 #if SOURCE_ENGINE != SE_CSGO
 	bool m_bSendNetMsgHooked = false;
 #endif
+	bool m_bHasClientPrintfOffset = false;
 	bool m_bHasShutdownOffset = false;
 	ke::Vector<ke::AutoPtr<HLTVServerWrapper>> m_HLTVServers;
 };

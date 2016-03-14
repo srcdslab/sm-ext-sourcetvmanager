@@ -11,6 +11,13 @@ SH_DECL_MANUALHOOK0_void(CHLTVServer_Shutdown, 0, 0, 0);
 
 // Stuff to print to demo console
 SH_DECL_HOOK0_void_vafmt(IClient, ClientPrintf, SH_NOATTRIB, 0);
+
+// Linux has the ClientPrintf method in both CGameClient and IClient's vtables
+// and uses both.. Need to hook both....... i guess?
+#ifndef WIN32
+SH_DECL_MANUALHOOK0_void_vafmt(CGameClient_ClientPrintf, 0, 0, 0);
+#endif
+
 // This should be large enough.
 #define FAKE_VTBL_LENGTH 70
 static void *FakeNetChanVtbl[FAKE_VTBL_LENGTH];
@@ -107,8 +114,14 @@ void HLTVServerWrapper::Hook()
 			SH_ADD_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnHLTVBotExecuteStringCommand), false);
 			SH_ADD_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnHLTVBotExecuteStringCommand_Post), true);
 #if SOURCE_ENGINE != SE_CSGO
-			SH_ADD_HOOK(IClient, ClientPrintf, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnHLTVBotClientPrintf_Post), false);
-#endif
+			SH_ADD_HOOK(IClient, ClientPrintf, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnIClient_ClientPrintf_Post), false);
+#ifndef WIN32
+			// The IClient vtable is +4 from the CBaseClient vtable due to multiple inheritance.
+			void *pGameClient = (void *)((intptr_t)pClient - 4);
+			if (g_HLTVServers.HasClientPrintfOffset())
+				SH_ADD_MANUALHOOK(CGameClient_ClientPrintf, pGameClient, SH_MEMBER(this, &HLTVServerWrapper::OnCGameClient_ClientPrintf_Post), false);
+#endif // !WIN32
+#endif // SOURCE_ENGINE != SE_CSGO
 		}
 	}
 }
@@ -133,8 +146,14 @@ void HLTVServerWrapper::Unhook()
 			SH_REMOVE_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnHLTVBotExecuteStringCommand), false);
 			SH_REMOVE_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnHLTVBotExecuteStringCommand_Post), true);
 #if SOURCE_ENGINE != SE_CSGO
-			SH_REMOVE_HOOK(IClient, ClientPrintf, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnHLTVBotClientPrintf_Post), false);
-#endif
+			SH_REMOVE_HOOK(IClient, ClientPrintf, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnIClient_ClientPrintf_Post), false);
+#ifndef WIN32
+			// The IClient vtable is +4 from the CBaseClient vtable due to multiple inheritance.
+			void *pGameClient = (void *)((intptr_t)pClient - 4);
+			if (g_HLTVServers.HasClientPrintfOffset())
+				SH_REMOVE_MANUALHOOK(CGameClient_ClientPrintf, pGameClient, SH_MEMBER(this, &HLTVServerWrapper::OnCGameClient_ClientPrintf_Post), false);
+#endif // !WIN32
+#endif // SOURCE_ENGINE != SE_CSGO
 		}
 	}
 }
@@ -190,19 +209,38 @@ bool HLTVServerWrapper::OnHLTVBotExecuteStringCommand_Post(const char *s)
 }
 
 #if SOURCE_ENGINE != SE_CSGO
-void HLTVServerWrapper::OnHLTVBotClientPrintf_Post(const char* buf)
+void HLTVServerWrapper::OnCGameClient_ClientPrintf_Post(const char* buf)
+{
+	void *pGameClient = META_IFACEPTR(void);
+	IClient *pClient = (IClient *)((intptr_t)pGameClient + 4);
+	HandleClientPrintf(pClient, buf);
+
+	RETURN_META(MRES_IGNORED);
+}
+
+void HLTVServerWrapper::OnIClient_ClientPrintf_Post(const char* buf)
+{
+	IClient *pClient = META_IFACEPTR(IClient);
+	HandleClientPrintf(pClient, buf);
+
+	RETURN_META(MRES_IGNORED);
+}
+
+void HLTVServerWrapper::HandleClientPrintf(IClient *pClient, const char* buf)
 {
 	// Craft our own "NetChan" pointer
 	static int offset = -1;
 	if (!g_pGameConf->GetOffset("CBaseClient::m_NetChannel", &offset) || offset == -1)
 	{
 		smutils->LogError(myself, "Failed to find CBaseClient::m_NetChannel offset. Can't print to demo console.");
-		RETURN_META(MRES_IGNORED);
+		return;
 	}
 
-	IClient *pClient = META_IFACEPTR(IClient);
-
+#ifdef WIN32
 	void *pNetChannel = (void *)((char *)pClient + offset);
+#else
+	void *pNetChannel = (void *)((char *)pClient + offset - 4);
+#endif
 	// Set our fake netchannel
 	*(void **)pNetChannel = &FakeNetChan;
 	// Call ClientPrintf again, this time with a "Netchannel" set on the bot.
@@ -210,8 +248,6 @@ void HLTVServerWrapper::OnHLTVBotClientPrintf_Post(const char* buf)
 	SH_CALL(pClient, &IClient::ClientPrintf)("%s", buf);
 	// Set the fake netchannel back to 0.
 	*(void **)pNetChannel = nullptr;
-
-	RETURN_META(MRES_IGNORED);
 }
 #endif
 
@@ -232,6 +268,18 @@ void HLTVServerWrapperManager::InitHooks()
 	}
 
 #if SOURCE_ENGINE != SE_CSGO
+#ifndef WIN32
+	if (g_pGameConf->GetOffset("CGameClient::ClientPrintf", &offset))
+	{
+		SH_MANUALHOOK_RECONFIGURE(CGameClient_ClientPrintf, offset, 0, 0);
+		m_bHasClientPrintfOffset = true;
+	}
+	else
+	{
+		smutils->LogError(myself, "Failed to find CGameClient::ClientPrintf offset. Won't catch \"status\" console output.");
+	}
+#endif // !WIN32
+
 	if (g_pGameConf->GetOffset("CNetChan::SendNetMsg", &offset))
 	{
 		if (offset >= FAKE_VTBL_LENGTH)
@@ -388,6 +436,11 @@ IDemoRecorder *HLTVServerWrapperManager::GetDemoRecorderPtr(IHLTVServer *hltv)
 bool HLTVServerWrapperManager::HasShutdownOffset()
 {
 	return m_bHasShutdownOffset;
+}
+
+bool HLTVServerWrapperManager::HasClientPrintfOffset()
+{
+	return m_bHasClientPrintfOffset;
 }
 
 #if SOURCE_ENGINE != SE_CSGO
