@@ -143,7 +143,7 @@ public:
 private:
 #if SOURCE_ENGINE == SE_CSGO
 	void OnAddHLTVServer_Post(IHLTVServer *hltv);
-	void OnRemoveHLTVServer_Post(IHLTVServer *hltv);
+	void OnRemoveHLTVServer(IHLTVServer *hltv);
 #else
 	void OnSetHLTVServer_Post(IHLTVServer *hltv);
 #endif

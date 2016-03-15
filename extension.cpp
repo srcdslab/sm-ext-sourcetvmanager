@@ -109,7 +109,7 @@ void SourceTVManager::SDK_OnAllLoaded()
 {
 #if SOURCE_ENGINE == SE_CSGO
 	SH_ADD_HOOK(IHLTVDirector, AddHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnAddHLTVServer_Post), true);
-	SH_ADD_HOOK(IHLTVDirector, RemoveHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnRemoveHLTVServer_Post), true);
+	SH_ADD_HOOK(IHLTVDirector, RemoveHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnRemoveHLTVServer), false);
 #else
 	SH_ADD_HOOK(IHLTVDirector, SetHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnSetHLTVServer_Post), true);
 #endif
@@ -166,7 +166,7 @@ void SourceTVManager::SDK_OnUnload()
 {
 #if SOURCE_ENGINE == SE_CSGO
 	SH_REMOVE_HOOK(IHLTVDirector, AddHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnAddHLTVServer_Post), true);
-	SH_REMOVE_HOOK(IHLTVDirector, RemoveHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnRemoveHLTVServer_Post), true);
+	SH_REMOVE_HOOK(IHLTVDirector, RemoveHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnRemoveHLTVServer), false);
 #else
 	SH_REMOVE_HOOK(IHLTVDirector, SetHLTVServer, hltvdirector, SH_MEMBER(this, &SourceTVManager::OnSetHLTVServer_Post), true);
 #endif
@@ -218,7 +218,7 @@ void SourceTVManager::OnAddHLTVServer_Post(IHLTVServer *hltv)
 	RETURN_META(MRES_IGNORED);
 }
 
-void SourceTVManager::OnRemoveHLTVServer_Post(IHLTVServer *hltv)
+void SourceTVManager::OnRemoveHLTVServer(IHLTVServer *hltv)
 {
 	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(hltv);
 	if (!wrapper)
