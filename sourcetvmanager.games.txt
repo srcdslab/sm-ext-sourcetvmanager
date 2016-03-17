@@ -63,6 +63,11 @@
 				"linux"	"65"
 			}
 			
+			"CBaseClient::Disconnect"
+			{
+				"linux"	"16"
+			}
+			
 			"CHLTVServer::Shutdown"
 			{
 				"windows"	"45"
@@ -210,6 +215,11 @@
 			{
 				"windows"	"16"
 				"linux"	"56"
+			}
+			
+			"CBaseClient::Disconnect"
+			{
+				"linux"	"14"
 			}
 			
 			"CHLTVServer::Shutdown"

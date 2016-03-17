@@ -95,10 +95,14 @@ private:
 	void OnStopRecording();
 	IClient *OnSpectatorConnect(netadr_t &address, int nProtocol, int iChallenge, int iClientChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie);
 #endif
-	void OnSpectatorDisconnect(const char *reason);
+	void BaseClient_OnSpectatorDisconnect(const char *reason);
+	void IClient_OnSpectatorDisconnect(const char *reason);
 	void OnSpectatorPutInServer();
 
 	int OnGetChallengeType(const netadr_t &address);
+
+private:
+	void HandleSpectatorDisconnect(IClient *client, const char *reason);
 
 private:
 	IForward *m_StartRecordingFwd;
@@ -116,6 +120,7 @@ private:
 	bool m_bHasRejectConnectionOffset = false;
 	bool m_bHasGetChallengeTypeOffset = false;
 	bool m_bHasActivatePlayerOffset = false;
+	bool m_bHasDisconnectOffset = false;
 
 	// Only need the detours on linux. Windows always uses its vtables..
 #ifndef WIN32

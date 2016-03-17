@@ -49,10 +49,18 @@ SH_DECL_HOOK0_void(IDemoRecorder, StopRecording, SH_NOATTRIB, 0)
 SH_DECL_MANUALHOOK13(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, const netadr_t &, int, int, int, const char *, const char *, const char *, int, CUtlVector<NetMsg_SplitPlayerConnect *> &, bool, CrossPlayPlatform_t, const unsigned char *, int);
 SH_DECL_MANUALHOOK1_void_vafmt(CHLTVServer_RejectConnection, 0, 0, 0, const netadr_t &);
 SH_DECL_HOOK1_void(IClient, Disconnect, SH_NOATTRIB, 0, const char *);
+#ifndef WIN32
+SH_DECL_MANUALHOOK1_void(CBaseClient_Disconnect, 0, 0, 0, const char *);
+#endif // !WIN32
+
 #else
 SH_DECL_MANUALHOOK9(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, netadr_t &, int, int, int, int, const char *, const char *, const char *, int);
 SH_DECL_MANUALHOOK3_void(CHLTVServer_RejectConnection, 0, 0, 0, const netadr_t &, int, const char *);
 SH_DECL_HOOK0_void_vafmt(IClient, Disconnect, SH_NOATTRIB, 0);
+#ifndef WIN32
+SH_DECL_MANUALHOOK0_void_vafmt(CBaseClient_Disconnect, 0, 0, 0);
+#endif // !WIN32
+
 #endif
 SH_DECL_MANUALHOOK0_void(CBaseClient_ActivatePlayer, 0, 0, 0);
 
@@ -100,6 +108,18 @@ void CForwardManager::Init()
 		SH_MANUALHOOK_RECONFIGURE(CBaseClient_ActivatePlayer, offset, 0, 0);
 		m_bHasActivatePlayerOffset = true;
 	}
+
+#ifndef WIN32
+	if (!g_pGameConf->GetOffset("CBaseClient::Disconnect", &offset) || offset == -1)
+	{
+		smutils->LogError(myself, "Failed to get CBaseClient::Disconnect offset.");
+	}
+	else
+	{
+		SH_MANUALHOOK_RECONFIGURE(CBaseClient_Disconnect, offset, 0, 0);
+		m_bHasDisconnectOffset = true;
+	}
+#endif
 
 	m_StartRecordingFwd = forwards->CreateForward("SourceTV_OnStartRecording", ET_Ignore, 2, NULL, Param_Cell, Param_String);
 	m_StopRecordingFwd = forwards->CreateForward("SourceTV_OnStopRecording", ET_Ignore, 3, NULL, Param_Cell, Param_String, Param_Cell);
@@ -186,22 +206,30 @@ void CForwardManager::UnhookServer(HLTVServerWrapper *wrapper)
 
 void CForwardManager::HookClient(IClient *client)
 {
+	void *pGameClient = (void *)((intptr_t)client - 4);
 	if (m_bHasActivatePlayerOffset)
-	{
-		void *pGameClient = (void *)((intptr_t)client - 4);
 		SH_ADD_MANUALHOOK(CBaseClient_ActivatePlayer, pGameClient, SH_MEMBER(this, &CForwardManager::OnSpectatorPutInServer), true);
-	}
-	SH_ADD_HOOK(IClient, Disconnect, client, SH_MEMBER(this, &CForwardManager::OnSpectatorDisconnect), false);
+	
+	// Linux' engine uses the CGameClient vtable internally, but we're using the IClient vtable to kick players.
+	// Need to hook both to catch all cases >.<
+	SH_ADD_HOOK(IClient, Disconnect, client, SH_MEMBER(this, &CForwardManager::IClient_OnSpectatorDisconnect), false);
+#ifndef WIN32
+	if (m_bHasDisconnectOffset)
+		SH_ADD_MANUALHOOK(CBaseClient_Disconnect, pGameClient, SH_MEMBER(this, &CForwardManager::BaseClient_OnSpectatorDisconnect), false);
+#endif
 }
 
 void CForwardManager::UnhookClient(IClient *client)
 {
+	void *pGameClient = (void *)((intptr_t)client - 4);
 	if (m_bHasActivatePlayerOffset)
-	{
-		void *pGameClient = (void *)((intptr_t)client - 4);
 		SH_REMOVE_MANUALHOOK(CBaseClient_ActivatePlayer, pGameClient, SH_MEMBER(this, &CForwardManager::OnSpectatorPutInServer), true);
-	}
-	SH_REMOVE_HOOK(IClient, Disconnect, client, SH_MEMBER(this, &CForwardManager::OnSpectatorDisconnect), false);
+	
+	SH_REMOVE_HOOK(IClient, Disconnect, client, SH_MEMBER(this, &CForwardManager::IClient_OnSpectatorDisconnect), false);
+#ifndef WIN32
+	if (m_bHasDisconnectOffset)
+		SH_REMOVE_MANUALHOOK(CBaseClient_Disconnect, pGameClient, SH_MEMBER(this, &CForwardManager::BaseClient_OnSpectatorDisconnect), false);
+#endif
 }
 
 void CForwardManager::CallOnServerStart(IHLTVServer *server)
@@ -330,12 +358,31 @@ int CForwardManager::OnGetChallengeType(const netadr_t &address)
 	RETURN_META_VALUE(MRES_SUPERCEDE, k_EAuthProtocolSteam);
 }
 
-void CForwardManager::OnSpectatorDisconnect(const char *reason)
+void CForwardManager::BaseClient_OnSpectatorDisconnect(const char *reason)
+{
+	void *pGameClient = META_IFACEPTR(void);
+	if (!pGameClient)
+		RETURN_META(MRES_IGNORED);
+
+	IClient *client = (IClient *)((intptr_t)pGameClient + 4);
+	HandleSpectatorDisconnect(client, reason);
+
+	RETURN_META(MRES_SUPERCEDE);
+}
+
+void CForwardManager::IClient_OnSpectatorDisconnect(const char *reason)
 {
 	IClient *client = META_IFACEPTR(IClient);
 	if (!client)
 		RETURN_META(MRES_IGNORED);
 
+	HandleSpectatorDisconnect(client, reason);
+
+	RETURN_META(MRES_SUPERCEDE);
+}
+
+void CForwardManager::HandleSpectatorDisconnect(IClient *client, const char *reason)
+{
 	UnhookClient(client);
 
 	char disconnectReason[255];
@@ -346,6 +393,8 @@ void CForwardManager::OnSpectatorDisconnect(const char *reason)
 	m_SpectatorDisconnectFwd->PushStringEx(disconnectReason, 255, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
 	m_SpectatorDisconnectFwd->Execute();
 
+	// We always call the IClient::Disconnect variant, even if we're coming from CGameClient::Disconnect on linux.
+	// They point to the same function in the engine though. Could only confuse other hooks, so might need to revisit this.
 #if SOURCE_ENGINE == SE_CSGO
 	SH_CALL(client, &IClient::Disconnect)(disconnectReason);
 #else
@@ -355,8 +404,6 @@ void CForwardManager::OnSpectatorDisconnect(const char *reason)
 	m_SpectatorDisconnectedFwd->PushCell(clientIndex);
 	m_SpectatorDisconnectedFwd->PushString(disconnectReason);
 	m_SpectatorDisconnectedFwd->Execute();
-
-	RETURN_META(MRES_SUPERCEDE);
 }
 
 void CForwardManager::OnSpectatorPutInServer()
