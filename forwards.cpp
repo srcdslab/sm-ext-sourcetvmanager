@@ -464,7 +464,11 @@ void CForwardManager::CallOnStopRecording(IDemoRecorder *recorder)
 	if (!recorder->IsRecording())
 		return;
 
+#if SOURCE_ENGINE == SE_CSGO
+	char *pDemoFile = (char *)recorder->GetDemoFile() + 4;
+#else
 	char *pDemoFile = (char *)recorder->GetDemoFile();
+#endif
 	
 	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(recorder);
 	int instance = -1;

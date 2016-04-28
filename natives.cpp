@@ -533,7 +533,11 @@ static cell_t Native_GetDemoFileName(IPluginContext *pContext, const cell_t *par
 	if (!hltvserver->GetDemoRecorder()->IsRecording())
 		return 0;
 
+#if SOURCE_ENGINE == SE_CSGO
+	char *pDemoFile = (char *)hltvserver->GetDemoRecorder()->GetDemoFile() + 4;
+#else
 	char *pDemoFile = (char *)hltvserver->GetDemoRecorder()->GetDemoFile();
+#endif
 	if (!pDemoFile)
 		return 0;
 
