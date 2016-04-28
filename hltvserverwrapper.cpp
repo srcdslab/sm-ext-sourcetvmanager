@@ -376,7 +376,7 @@ HLTVServerWrapper *HLTVServerWrapperManager::GetWrapper(IDemoRecorder *demorecor
 	for (unsigned int i = 0; i < m_HLTVServers.length(); i++)
 	{
 		HLTVServerWrapper *wrapper = m_HLTVServers[i];
-		if (wrapper->GetDemoRecorder() == demorecorder)
+		if (wrapper->GetDemoRecorder() != nullptr && wrapper->GetDemoRecorder() == demorecorder)
 			return wrapper;
 	}
 	return nullptr;

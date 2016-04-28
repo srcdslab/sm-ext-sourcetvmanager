@@ -446,6 +446,8 @@ static cell_t Native_ForceChaseCameraShot(IPluginContext *pContext, const cell_t
 // native bool:SourceTV_IsRecording();
 static cell_t Native_IsRecording(IPluginContext *pContext, const cell_t *params)
 {
+	if (!hltvserver || !hltvserver->GetDemoRecorder())
+		return 0;
 	return hltvserver->GetDemoRecorder()->IsRecording();
 }
 
@@ -467,6 +469,10 @@ static cell_t Native_StartRecording(IPluginContext *pContext, const cell_t *para
 
 	// Only SourceTV Master can record demos instantly
 	if (!hltvserver->GetHLTVServer()->IsMasterProxy())
+		return 0;
+	
+	// Failed to find the IDemoRecorder instance
+	if (!hltvserver->GetDemoRecorder())
 		return 0;
 
 	// already recording
@@ -514,6 +520,14 @@ static cell_t Native_StartRecording(IPluginContext *pContext, const cell_t *para
 // native bool:SourceTV_StopRecording();
 static cell_t Native_StopRecording(IPluginContext *pContext, const cell_t *params)
 {
+	if (hltvserver == nullptr)
+		return 0;
+
+	// Failed to find the IDemoRecorder instance
+	if (!hltvserver->GetDemoRecorder())
+		return 0;
+
+	// Not recording
 	if (!hltvserver->GetDemoRecorder()->IsRecording())
 		return 0;
 
@@ -530,6 +544,14 @@ static cell_t Native_StopRecording(IPluginContext *pContext, const cell_t *param
 // native bool:SourceTV_GetDemoFileName(String:sFilename[], maxlen);
 static cell_t Native_GetDemoFileName(IPluginContext *pContext, const cell_t *params)
 {
+	if (hltvserver == nullptr)
+		return 0;
+
+	// Failed to find the IDemoRecorder instance
+	if (!hltvserver->GetDemoRecorder())
+		return 0;
+
+	// Not recording
 	if (!hltvserver->GetDemoRecorder()->IsRecording())
 		return 0;
 
@@ -549,6 +571,13 @@ static cell_t Native_GetDemoFileName(IPluginContext *pContext, const cell_t *par
 // native SourceTV_GetRecordingTick();
 static cell_t Native_GetRecordingTick(IPluginContext *pContext, const cell_t *params)
 {
+	if (hltvserver == nullptr)
+		return -1;
+
+	// Failed to find the IDemoRecorder instance
+	if (!hltvserver->GetDemoRecorder())
+		return -1;
+
 	if (!hltvserver->GetDemoRecorder()->IsRecording())
 		return -1;
 
