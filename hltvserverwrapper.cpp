@@ -416,16 +416,16 @@ IDemoRecorder *HLTVServerWrapperManager::GetDemoRecorderPtr(IHLTVServer *hltv)
 
 	if (hltv)
 	{
-#if SOURCE_ENGINE == SE_CSGO
-		return (IDemoRecorder *)((intptr_t)hltv + offset);
-#else
 		IServer *baseServer = hltv->GetBaseServer();
 #ifndef WIN32
 		return (IDemoRecorder *)((intptr_t)baseServer + offset - 4);
 #else
+#if SOURCE_ENGINE == SE_CSGO
+		return (IDemoRecorder *)((intptr_t)hltv + offset);
+#else
 		return (IDemoRecorder *)((intptr_t)baseServer + offset);
-#endif // WIN32
 #endif // SOURCE_ENGINE == SE_CSGO
+#endif // !WIN32
 	}
 	else
 	{
