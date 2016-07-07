@@ -67,6 +67,18 @@ IDemoRecorder *HLTVServerWrapper::GetDemoRecorder()
 	return m_DemoRecorder;
 }
 
+char *HLTVServerWrapper::GetDemoFileName()
+{
+	if (!m_DemoRecorder)
+		return nullptr;
+
+#if SOURCE_ENGINE == SE_CSGO
+	return (char *)m_DemoRecorder + 8;
+#else
+	return (char *)m_DemoRecorder->GetDemoFile();
+#endif
+}
+
 int HLTVServerWrapper::GetInstanceNumber()
 {
 	return g_HLTVServers.GetInstanceNumber(m_HLTVServer);

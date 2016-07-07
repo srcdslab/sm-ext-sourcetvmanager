@@ -47,7 +47,11 @@
 #include "ihltv.h"
 #include "iserver.h"
 #include "iclient.h"
-#include "ihltvdemorecorder.h"
+#if SOURCE_ENGINE == SE_CSGO
+# include "ihltvdemorecorder_csgo.h"
+#else
+# include "ihltvdemorecorder.h"
+#endif
 #include "igameevents.h"
 #include "inetmessage.h"
 #include "netadr.h"

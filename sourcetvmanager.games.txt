@@ -114,7 +114,7 @@
 			{
 				"library"	"engine"
 				"linux"	"@_ZN11CHLTVServer24GetRecordingDemoFilenameEv"
-				"windows" "\x8B\x81\x2A\x2A\x2A\x2A\x81\xC1\x2A\x2A\x2A\x2A\xFF\x10"
+				"windows" "\x8B\x81\x2A\x2A\x2A\x2A\x81\xC1\x2A\x2A\x2A\x2A\x8B\x40\x2A\xFF\xE0"
 			}
 			
 			// StartRecording and StopRecording are virtual, but get called directly in the linux binary..

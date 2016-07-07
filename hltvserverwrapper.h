@@ -44,6 +44,7 @@ public:
 	IHLTVServer *GetHLTVServer();
 	IServer *GetBaseServer();
 	IDemoRecorder *GetDemoRecorder();
+	char *GetDemoFileName();
 	HLTVClientWrapper *GetClient(int index);
 	int GetInstanceNumber();
 
