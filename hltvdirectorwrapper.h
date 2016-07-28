@@ -34,6 +34,12 @@
 
 #include "extension.h"
 
+#if SOURCE_ENGINE == SE_CSGO
+# define DIRECTOR_NO_TARGET -1
+#else
+# define DIRECTOR_NO_TARGET 0
+#endif
+
 class HLTVDirectorWrapper {
 public:
 	void SetPVSEntity(int index);

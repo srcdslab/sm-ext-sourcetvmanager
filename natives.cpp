@@ -267,7 +267,13 @@ static cell_t Native_BroadcastScreenMessage(IPluginContext *pContext, const cell
 	if (!msg)
 		return 0;
 
+#if SOURCE_ENGINE == SE_CSGO
+	wchar_t wBuffer[1024];
+	V_UTF8ToUnicode(buffer, wBuffer, sizeof(wBuffer));
+	msg->SetWString("text", wBuffer);
+#else
 	msg->SetString("text", buffer);
+#endif
 
 	int ret = 1;
 	bool bLocalOnly = params[1] != 0;
@@ -323,7 +329,13 @@ static cell_t Native_BroadcastChatMessage(IPluginContext *pContext, const cell_t
 	if (!msg)
 		return 0;
 
+#if SOURCE_ENGINE == SE_CSGO
+	wchar_t wBuffer[1024];
+	V_UTF8ToUnicode(buffer, wBuffer, sizeof(wBuffer));
+	msg->SetWString("text", wBuffer);
+#else
 	msg->SetString("text", buffer);
+#endif
 
 	int ret = 1;
 	bool bLocalOnly = params[1] != 0;
@@ -389,7 +401,7 @@ static cell_t Native_ForceFixedCameraShot(IPluginContext *pContext, const cell_t
 	shot->SetInt("posz", vPos.z);
 	shot->SetInt("theta", sp_ctof(angle[0]));
 	shot->SetInt("phi", sp_ctof(angle[1]));
-	shot->SetInt("target", params[3] ? gamehelpers->ReferenceToIndex(params[3]) : 0);
+	shot->SetInt("target", params[3] ? gamehelpers->ReferenceToIndex(params[3]) : DIRECTOR_NO_TARGET);
 	shot->SetFloat("fov", sp_ctof(params[4]));
 
 	hltvserver->GetHLTVServer()->BroadcastEvent(shot);
@@ -425,7 +437,7 @@ static cell_t Native_ForceChaseCameraShot(IPluginContext *pContext, const cell_t
 		return 0;
 
 	shot->SetInt("target1", gamehelpers->ReferenceToIndex(params[1]));
-	shot->SetInt("target2", params[2] ? gamehelpers->ReferenceToIndex(params[2]) : 0);
+	shot->SetInt("target2", params[2] ? gamehelpers->ReferenceToIndex(params[2]) : DIRECTOR_NO_TARGET);
 	shot->SetInt("distance", params[3]);
 	shot->SetInt("phi", params[4]); // hi/low
 	shot->SetInt("theta", params[5]); // left/right
