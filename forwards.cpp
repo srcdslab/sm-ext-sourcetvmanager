@@ -466,7 +466,7 @@ void CForwardManager::CallOnStopRecording(IDemoRecorder *recorder)
 	
 	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(recorder);
 	int instance = -1;
-	char *pDemoFile = "";
+	const char *pDemoFile = "";
 	if (wrapper)
 	{
 		instance = wrapper->GetInstanceNumber();
