@@ -194,7 +194,13 @@ void HLTVServerWrapper::OnHLTVServerShutdown()
 bool HLTVServerWrapper::OnHLTVBotExecuteStringCommand(const char *s)
 {
 	if (!host_client)
-		RETURN_META_VALUE(MRES_IGNORED, 0);
+	{
+		// Block crash in status command.
+		if (!Q_stricmp(s, "status"))
+			RETURN_META_VALUE(MRES_SUPERCEDE, 0);
+		else
+			RETURN_META_VALUE(MRES_IGNORED, 0);
+	}
 
 	IClient *pClient = META_IFACEPTR(IClient);
 	if (!pClient)
