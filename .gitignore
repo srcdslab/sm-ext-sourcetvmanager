@@ -237,5 +237,6 @@ _Pvt_Extensions
 
 # sm specific
 build/
+vs/
 msvc*/
 *.smx

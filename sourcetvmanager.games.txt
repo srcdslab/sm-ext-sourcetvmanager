@@ -9,7 +9,7 @@
 				"windows"
 				{
 					"signature"	"host_client"
-					"read" "37"
+					"read" "46"
 				}
 				"linux"
 				{
@@ -99,7 +99,7 @@
 				"library"	"engine"
 				"linux"	"@host_client"
 				// ping(CCommand const&) "Client ping times:\n"
-				"windows" "\x55\x8B\xEC\x83\xE4\xC0\x83\xEC\x34\x83\x3D\x2A\x2A\x2A\x2A\x01\x53\x56\x57\x75\x2A"
+				"windows" "\x55\x8B\xEC\x83\xE4\xC0\x8B\x4D\x08\x83\xEC\x34"
 			}
 			
 			"CHLTVServer::BroadcastEventLocal"
