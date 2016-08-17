@@ -27,7 +27,7 @@
 				"linux"
 				{
 					"signature"	"CHLTVServer::GetRecordingDemoFilename"
-					"read"	"10"
+					"read"	"8"
 				}
 			}
 		}
