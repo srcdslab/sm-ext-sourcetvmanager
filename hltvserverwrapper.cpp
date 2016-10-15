@@ -430,13 +430,20 @@ IDemoRecorder *HLTVServerWrapperManager::GetDemoRecorderPtr(IHLTVServer *hltv)
 		}
 
 		*(int **)&offset = (int *)addr;
+
+		// See if we have to subtract something from the offset.
+		int baseOffset = 0;
+		if (g_pGameConf->GetOffset("CHLTVDemoRecorder_BaseOffset", &baseOffset))
+		{
+			offset -= baseOffset;
+		}
 	}
 
 	if (hltv)
 	{
 		IServer *baseServer = hltv->GetBaseServer();
 #ifndef WIN32
-		return (IDemoRecorder *)((intptr_t)baseServer + offset - 4);
+	return (IDemoRecorder *)((intptr_t)baseServer + offset);
 #else
 #if SOURCE_ENGINE == SE_CSGO
 		return (IDemoRecorder *)((intptr_t)hltv + offset);

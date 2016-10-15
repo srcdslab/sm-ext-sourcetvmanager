@@ -91,6 +91,11 @@
 				"windows"	"52"
 				"linux"	"52"
 			}
+			"CHLTVDemoRecorder_BaseOffset"
+			{
+				"windows"	"0"
+				"linux"	"12"
+			}
 		}
 		"Signatures"
 		{
@@ -244,6 +249,11 @@
 			{
 				"windows"	"40"
 				"linux"	"40"
+			}
+			"CHLTVDemoRecorder_BaseOffset"
+			{
+				"windows"	"0"
+				"linux"	"4"
 			}
 		}
 		"Signatures"
