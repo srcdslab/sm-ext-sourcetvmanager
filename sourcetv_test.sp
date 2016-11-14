@@ -36,6 +36,7 @@ public OnPluginStart()
 	RegConsoleCmd("sm_speckick", Cmd_KickClient);
 	RegConsoleCmd("sm_specchatone", Cmd_PrintToChat);
 	RegConsoleCmd("sm_specconsoleone", Cmd_PrintToConsole);
+	RegConsoleCmd("sm_spectitle", Cmd_SetTVTitle);
 }
 
 public SourceTV_OnStartRecording(instance, const String:filename[])
@@ -470,5 +471,25 @@ public Action:Cmd_PrintToConsole(client, args)
 	new iTarget = StringToInt(sIndex);
 	SourceTV_PrintToConsole(iTarget, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending console message to spectator %d: %s", iTarget, sMsg);
+	return Plugin_Handled;
+}
+
+public Action:Cmd_SetTVTitle(client, args)
+{
+	if (args < 2)
+	{
+		ReplyToCommand(client, "Usage: sm_spectitle <index> <title>");
+		return Plugin_Handled;
+	}
+	
+	new String:sIndex[16], String:sMsg[1024];
+	GetCmdArg(1, sIndex, sizeof(sIndex));
+	StripQuotes(sIndex);
+	GetCmdArg(2, sMsg, sizeof(sMsg));
+	StripQuotes(sMsg);
+	
+	new iTarget = StringToInt(sIndex);
+	SourceTV_SetClientTVTitle(iTarget, "%s", sMsg);
+	ReplyToCommand(client, "SourceTV set stream title of spectator %d to %s", iTarget, sMsg);
 	return Plugin_Handled;
 }

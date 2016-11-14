@@ -416,6 +416,19 @@ native SourceTV_PrintToChat(client, const String:format[], any:...);
 native SourceTV_PrintToConsole(client, const String:format[], any:...);
 
 /**
+ * Change the stream title only for one spectator.
+ * This is like tv_title but for a single client.
+ * Gets overwritten when tv_title gets changed.
+ * 
+ * @param client	The spectator client index.
+ * @param format	The format string.
+ * @param ...	Variable number of format string arguments.
+ * @noreturn
+ * @error	Invalid client index or not connected.
+ */
+native SourceTV_SetClientTVTitle(client, const String:format[], any:...);
+
+/**
  * Called when a spectator wants to connect to the SourceTV server.
  * This is called before any other validation has happened.
  * Similar to the OnClientPreConnectEx forward in the Connect extension by asherkin.
@@ -543,5 +556,6 @@ public __ext_stvmngr_SetNTVOptional()
 	MarkNativeAsOptional("SourceTV_KickClient");
 	MarkNativeAsOptional("SourceTV_PrintToChat");
 	MarkNativeAsOptional("SourceTV_PrintToConsole");
+	MarkNativeAsOptional("SourceTV_SetClientTVTitle");
 }
 #endif

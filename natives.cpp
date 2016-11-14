@@ -890,6 +890,61 @@ static cell_t Native_PrintToConsole(IPluginContext *pContext, const cell_t *para
 	return 0;
 }
 
+
+// native SourceTV_SetClientTVTitle(client, const String:format[], any:...);
+static cell_t Native_SetClientTVTitle(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	cell_t client = params[1];
+	if (client < 1 || client > hltvserver->GetBaseServer()->GetClientCount())
+	{
+		pContext->ReportError("Invalid spectator client index %d.", client);
+		return 0;
+	}
+
+	HLTVClientWrapper *pClient = hltvserver->GetClient(client);
+	if (!pClient->IsConnected())
+	{
+		pContext->ReportError("Client %d is not connected.", client);
+		return 0;
+	}
+
+	char buffer[1024];
+	size_t len;
+	{
+		DetectExceptions eh(pContext);
+		len = smutils->FormatString(buffer, sizeof(buffer), pContext, params, 2);
+		if (eh.HasException())
+			return 0;
+	}
+
+	IGameEvent *msg = gameevents->CreateEvent("hltv_title", true);
+	if (!msg)
+		return 0;
+
+#if SOURCE_ENGINE == SE_CSGO
+	wchar_t wBuffer[1024];
+	V_UTF8ToUnicode(buffer, wBuffer, sizeof(wBuffer));
+	msg->SetWString("text", wBuffer);
+#else
+	msg->SetString("text", buffer);
+#endif
+
+	if (g_bHasClientFireGameEventOffset)
+	{
+		void *pGameClient = pClient->BaseClient();
+		// The IClient vtable is +4 from the CBaseClient vtable due to multiple inheritance.
+		pGameClient = (void *)((intptr_t)pGameClient - 4);
+		SH_MCALL(pGameClient, CBaseClient_FireGameEvent)(msg);
+	}
+
+	gameevents->FreeEvent(msg);
+
+	return 0;
+}
+
 const sp_nativeinfo_t sourcetv_natives[] =
 {
 	{ "SourceTV_GetServerInstanceCount", Native_GetServerInstanceCount },
@@ -928,5 +983,6 @@ const sp_nativeinfo_t sourcetv_natives[] =
 	{ "SourceTV_KickClient", Native_KickClient },
 	{ "SourceTV_PrintToChat", Native_PrintToChat },
 	{ "SourceTV_PrintToConsole", Native_PrintToConsole },
+	{ "SourceTV_SetClientTVTitle", Native_SetClientTVTitle },
 	{ NULL, NULL },
 };
