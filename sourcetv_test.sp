@@ -34,6 +34,7 @@ public OnPluginStart()
 	RegConsoleCmd("sm_democonsole", Cmd_PrintDemoConsole);
 	RegConsoleCmd("sm_botcmd", Cmd_ExecuteStringCommand);
 	RegConsoleCmd("sm_speckick", Cmd_KickClient);
+	RegConsoleCmd("sm_specchatone", Cmd_PrintToChat);
 }
 
 public SourceTV_OnStartRecording(instance, const String:filename[])
@@ -413,7 +414,7 @@ public Action:Cmd_ExecuteStringCommand(client, args)
 
 public Action:Cmd_KickClient(client, args)
 {
-	if (args < 1)
+	if (args < 2)
 	{
 		ReplyToCommand(client, "Usage: sm_speckick <index> <reason>");
 		return Plugin_Handled;
@@ -428,5 +429,25 @@ public Action:Cmd_KickClient(client, args)
 	new iTarget = StringToInt(sIndex);
 	SourceTV_KickClient(iTarget, sMsg);
 	ReplyToCommand(client, "SourceTV kicking spectator %d with reason %s", iTarget, sMsg);
+	return Plugin_Handled;
+}
+
+public Action:Cmd_PrintToChat(client, args)
+{
+	if (args < 2)
+	{
+		ReplyToCommand(client, "Usage: sm_specchatone <index> <message>");
+		return Plugin_Handled;
+	}
+	
+	new String:sIndex[16], String:sMsg[1024];
+	GetCmdArg(1, sIndex, sizeof(sIndex));
+	StripQuotes(sIndex);
+	GetCmdArg(2, sMsg, sizeof(sMsg));
+	StripQuotes(sMsg);
+	
+	new iTarget = StringToInt(sIndex);
+	SourceTV_PrintToChat(iTarget, "%s", sMsg);
+	ReplyToCommand(client, "SourceTV sending chat message to spectator %d: %s", iTarget, sMsg);
 	return Plugin_Handled;
 }

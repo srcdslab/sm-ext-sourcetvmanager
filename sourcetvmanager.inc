@@ -393,6 +393,16 @@ native SourceTV_GetClientPassword(client, String:password[], maxlen);
  */
 native SourceTV_KickClient(client, const String:sReason[]);
 
+/**
+ * Print a message to a single client's chat.
+ * 
+ * @param client	The spectator client index.
+ * @param format	The format string.
+ * @param ...	Variable number of format string arguments.
+ * @noreturn
+ * @error	Invalid client index or not connected.
+ */
+native SourceTV_PrintToChat(client, const String:format[], any:...);
 
 /**
  * Called when a spectator wants to connect to the SourceTV server.
@@ -520,5 +530,6 @@ public __ext_stvmngr_SetNTVOptional()
 	MarkNativeAsOptional("SourceTV_GetClientIP");
 	MarkNativeAsOptional("SourceTV_GetClientPassword");
 	MarkNativeAsOptional("SourceTV_KickClient");
+	MarkNativeAsOptional("SourceTV_PrintToChat");
 }
 #endif

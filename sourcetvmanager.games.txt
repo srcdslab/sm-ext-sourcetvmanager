@@ -63,6 +63,12 @@
 				"linux"	"65"
 			}
 			
+			"CBaseClient::FireGameEvent"
+			{
+				"windows"	"1"
+				"linux"	"2"
+			}
+			
 			"CBaseClient::Disconnect"
 			{
 				"linux"	"16"
@@ -228,6 +234,12 @@
 			{
 				"windows"	"16"
 				"linux"	"56"
+			}
+			
+			"CBaseClient::FireGameEvent"
+			{
+				"windows"	"1"
+				"linux"	"2"
 			}
 			
 			"CBaseClient::Disconnect"
