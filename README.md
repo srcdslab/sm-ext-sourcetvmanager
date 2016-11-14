@@ -2,15 +2,20 @@
 Interface to interact with the SourceTV server from SourcePawn.
 
 This is a [SourceMod](http://www.sourcemod.net/) extension providing an API for plugins to access the [SourceTV](https://developer.valvesoftware.com/wiki/SourceTV) server instance(s).
+[Forum thread](https://forums.alliedmods.net/showthread.php?t=280402)
 
 #### API
 There are natives and forwards to access
   * Basic SourceTV information (stats, delay, active)
-  * Interacting with spectators (chat/console messages, kick, ip, name)
+  * Interacting with spectators (chat/console messages, kick, ip, name, tv title)
   * Forcing camera shots on the director
   * Demo recording (filename, recording tick, print message to demo console)
 
 Have a look at the [include file](sourcetvmanager.inc).
+
+#### Steam authentication for spectators
+The extension adds a convar `tv_force_steamauth` (defaults to 0) which lets you enable steam validation on SourceTV clients.
+Currently when this is enabled SourceTV relays are rejected.
 
 #### `status` command fixes
 There are several quirks around recording the `status` command output in a SourceTV demo.
