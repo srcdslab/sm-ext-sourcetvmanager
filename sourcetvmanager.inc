@@ -435,6 +435,29 @@ forward SourceTV_OnSpectatorDisconnected(client, const String:reason[255]);
 forward SourceTV_OnSpectatorPutInServer(client);
 
 /**
+ * Called before a spectator's chat message is sent.
+ * The message and chat group can be changed.
+ * Only called for directly connected clients - no proxies.
+ *
+ * @param client     The spectator client index.
+ * @param message    The message the client typed.
+ * @param chatgroup  The chatgroup this message is sent to (tv_chatgroup).
+ * @return >= Plugin_Handled to block the message, Plugin_Continue to let it through.
+ */
+forward Action:SourceTV_OnSpectatorChatMessage(client, String:message[255], String:chatgroup[255]);
+
+/**
+ * Called after a spectator wrote a chat message.
+ * Only called for directly connected clients - no proxies.
+ *
+ * @param client     The spectator client index.
+ * @param message    The message the client typed.
+ * @param chatgroup  The chatgroup this message is sent to (tv_chatgroup).
+ * @noreturn
+ */
+forward SourceTV_OnSpectatorChatMessage_Post(client, const String:message[], const String:chatgroup[]);
+
+/**
  * Do not edit below this line!
  */
 public Extension:__ext_stvmngr = 

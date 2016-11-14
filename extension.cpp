@@ -95,9 +95,7 @@ bool SourceTVManager::SDK_OnLoad(char *error, size_t maxlength, bool late)
 
 	g_HLTVServers.InitHooks();
 
-#ifndef WIN32
 	CDetourManager::Init(smutils->GetScriptingEngine(), g_pGameConf);
-#endif
 
 	sharesys->AddNatives(myself, sourcetv_natives);
 	sharesys->RegisterLibrary(myself, "sourcetvmanager");

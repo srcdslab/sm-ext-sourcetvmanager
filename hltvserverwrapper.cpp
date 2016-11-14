@@ -1,10 +1,10 @@
 #include "hltvserverwrapper.h"
 #include "forwards.h"
+#include "commonhooks.h"
 
 void *old_host_client = nullptr;
 bool g_HostClientOverridden = false;
 
-SH_DECL_HOOK1(IClient, ExecuteStringCommand, SH_NOATTRIB, 0, bool, const char *);
 SH_DECL_MANUALHOOK0_void(CHLTVServer_Shutdown, 0, 0, 0);
 
 #if SOURCE_ENGINE != SE_CSGO
@@ -30,6 +30,7 @@ HLTVServerWrapper::HLTVServerWrapper(IHLTVServer *hltvserver)
 	m_HLTVServer = hltvserver;
 	m_DemoRecorder = g_HLTVServers.GetDemoRecorderPtr(hltvserver);
 	m_Connected = true;
+	m_LastChatClient = nullptr;
 
 	Hook();
 
@@ -84,6 +85,26 @@ int HLTVServerWrapper::GetInstanceNumber()
 	return g_HLTVServers.GetInstanceNumber(m_HLTVServer);
 }
 
+IClient *HLTVServerWrapper::GetLastChatClient()
+{
+	return m_LastChatClient;
+}
+
+void HLTVServerWrapper::SetLastChatClient(IClient *client)
+{
+	m_LastChatClient = client;
+}
+
+const char *HLTVServerWrapper::GetLastChatMessage()
+{
+	return m_LastChatMessage;
+}
+
+void HLTVServerWrapper::SetLastChatMessage(const char *msg)
+{
+	m_LastChatMessage = msg;
+}
+
 HLTVClientWrapper *HLTVServerWrapper::GetClient(int index)
 {
 	// Grow the vector with null pointers
@@ -123,8 +144,8 @@ void HLTVServerWrapper::Hook()
 		IClient *pClient = iserver->GetClient(m_HLTVServer->GetHLTVSlot());
 		if (pClient)
 		{
-			SH_ADD_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnHLTVBotExecuteStringCommand), false);
-			SH_ADD_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnHLTVBotExecuteStringCommand_Post), true);
+			// Hook ExecuteStringCommand
+			g_pSTVCommonHooks.AddHLTVClientHook(this, pClient);
 #if SOURCE_ENGINE != SE_CSGO
 			SH_ADD_HOOK(IClient, ClientPrintf, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnIClient_ClientPrintf_Post), false);
 #ifndef WIN32
@@ -155,8 +176,8 @@ void HLTVServerWrapper::Unhook()
 		IClient *pClient = iserver->GetClient(m_HLTVServer->GetHLTVSlot());
 		if (pClient)
 		{
-			SH_REMOVE_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnHLTVBotExecuteStringCommand), false);
-			SH_REMOVE_HOOK(IClient, ExecuteStringCommand, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnHLTVBotExecuteStringCommand_Post), true);
+			// Remove ExecuteStringCommand hook
+			g_pSTVCommonHooks.RemoveHLTVClientHook(this, pClient);
 #if SOURCE_ENGINE != SE_CSGO
 			SH_REMOVE_HOOK(IClient, ClientPrintf, pClient, SH_MEMBER(this, &HLTVServerWrapper::OnIClient_ClientPrintf_Post), false);
 #ifndef WIN32
@@ -327,6 +348,7 @@ void HLTVServerWrapperManager::InitHooks()
 
 void HLTVServerWrapperManager::ShutdownHooks()
 {
+	g_pSTVForwards.RemoveBroadcastLocalChatDetour();
 #ifndef WIN32
 	g_pSTVForwards.RemoveStartRecordingDetour();
 	g_pSTVForwards.RemoveStopRecordingDetour();
@@ -343,8 +365,9 @@ void HLTVServerWrapperManager::ShutdownHooks()
 
 void HLTVServerWrapperManager::AddServer(IHLTVServer *hltvserver)
 {
-#ifndef WIN32
 	// Create the detours once the first sourcetv server is created.
+	g_pSTVForwards.CreateBroadcastLocalChatDetour();
+#ifndef WIN32
 	g_pSTVForwards.CreateStartRecordingDetour();
 	g_pSTVForwards.CreateStopRecordingDetour();
 #endif

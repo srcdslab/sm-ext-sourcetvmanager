@@ -87,6 +87,17 @@ public SourceTV_OnSpectatorDisconnected(client, const String:reason[255])
 	PrintToServer("SourceTV client %d disconnected (isconnected %d) with reason -> %s.", client, SourceTV_IsClientConnected(client), reason);
 }
 
+public Action:SourceTV_OnSpectatorChatMessage(client, String:message[255], String:chatgroup[255])
+{
+	PrintToServer("SourceTV client %d (chatgroup \"%s\") writes: %s", client, chatgroup, message);
+	return Plugin_Continue;
+}
+
+public SourceTV_OnSpectatorChatMessage_Post(client, const String:message[], const String:chatgroup[])
+{
+	PrintToServer("SourceTV client %d (chatgroup \"%s\") wrote: %s", client, chatgroup, message);
+}
+
 public Action:Cmd_GetServerCount(client, args)
 {
 	ReplyToCommand(client, "SourceTV server count: %d", SourceTV_GetServerInstanceCount());

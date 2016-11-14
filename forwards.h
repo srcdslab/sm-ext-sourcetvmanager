@@ -70,9 +70,9 @@ public:
 	void UnhookServer(HLTVServerWrapper *server);
 
 #ifndef WIN32
-	bool CreateStartRecordingDetour();
+	void CreateStartRecordingDetour();
 	void RemoveStartRecordingDetour();
-	bool CreateStopRecordingDetour();
+	void CreateStopRecordingDetour();
 	void RemoveStopRecordingDetour();
 #endif
 
@@ -81,6 +81,13 @@ public:
 
 	void CallOnStartRecording(IDemoRecorder *recorder, const char *filename, bool bContinuously);
 	void CallOnStopRecording(IDemoRecorder *recorder);
+
+	bool CallOnSpectatorChatMessage(HLTVServerWrapper *server, char *msg, int msglen, char *chatgroup, int grouplen);
+	void CallOnSpectatorChatMessage_Post(HLTVServerWrapper *server, const char *msg, const char *chatgroup);
+
+	bool OnSpectatorExecuteStringCommand(const char *s);
+	void CreateBroadcastLocalChatDetour();
+	void RemoveBroadcastLocalChatDetour();
 
 private:
 	void HookClient(IClient *client);
@@ -112,6 +119,8 @@ private:
 	IForward *m_SpectatorDisconnectFwd;
 	IForward *m_SpectatorDisconnectedFwd;
 	IForward *m_SpectatorPutInServerFwd;
+	IForward *m_SpectatorChatMessageFwd;
+	IForward *m_SpectatorChatMessagePostFwd;
 
 	IForward *m_ServerStartFwd;
 	IForward *m_ServerShutdownFwd;
@@ -121,6 +130,9 @@ private:
 	bool m_bHasGetChallengeTypeOffset = false;
 	bool m_bHasActivatePlayerOffset = false;
 	bool m_bHasDisconnectOffset = false;
+
+	bool m_bBroadcastLocalChatDetoured = false;
+	CDetour *m_DBroadcastLocalChat = nullptr;
 
 	// Only need the detours on linux. Windows always uses its vtables..
 #ifndef WIN32

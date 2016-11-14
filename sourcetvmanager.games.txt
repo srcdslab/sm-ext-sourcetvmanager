@@ -115,6 +115,14 @@
 				"windows"	"\x55\x8B\xEC\x83\xEC\x4C\x53\x8B\xD9\xC7\x45\xB4\x2A\x2A\x2A\x2A\x56\x8D"
 			}
 			
+			"CHLTVServer::BroadcastLocalChat"
+			{
+				"library"	"engine"
+				"linux"	"@_ZN11CHLTVServer18BroadcastLocalChatEPKcS1_"
+				// "hltv_chat"
+				"windows"	"\x55\x8B\xEC\x83\xEC\x54\xA1\x2A\x2A\x2A\x2A\x53"
+			}
+			
 			"CHLTVServer::GetRecordingDemoFilename"
 			{
 				"library"	"engine"
@@ -272,6 +280,14 @@
 				"linux"	"@_ZN11CHLTVServer19BroadcastEventLocalEP10IGameEventb"
 				// "SourceTV broadcast local event: %s\n"
 				"windows"	"\x55\x8B\xEC\x81\xEC\x44\x04\x00\x00\x53"
+			}
+			
+			"CHLTVServer::BroadcastLocalChat"
+			{
+				"library"	"engine"
+				"linux"	"@_ZN11CHLTVServer18BroadcastLocalChatEPKcS1_"
+				// "hltv_chat"
+				"windows"	"\x55\x8B\xEC\x81\xEC\x4C\x04\x00\x00\x53\x8B\xD9"
 			}
 			
 			"CHLTVServer::Shutdown"

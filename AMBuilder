@@ -6,11 +6,14 @@ projectName = 'sourcetvmanager'
 # smsdk_ext.cpp will be automatically added later
 sourceFiles = [
   'extension.cpp',
+  'commonhooks.cpp',
   'natives.cpp',
   'forwards.cpp',
   'hltvserverwrapper.cpp',
   'hltvdirectorwrapper.cpp',
-  'hltvclientwrapper.cpp'
+  'hltvclientwrapper.cpp',
+  os.path.join(Extension.sm_root, 'public', 'CDetour', 'detours.cpp'),
+  os.path.join(Extension.sm_root, 'public', 'asm', 'asm.c')
 ]
 
 ###############
@@ -35,12 +38,6 @@ for sdk_name in ['css', 'tf2', 'dods', 'hl2dm', 'csgo']:
   
   binary = Extension.HL2Config(project, projectName + '.ext.' + sdk.ext, sdk)
   compiler = binary.compiler
-  
-  if builder.target_platform == 'linux':
-    binary.sources += [
-      os.path.join(Extension.sm_root, 'public', 'CDetour', 'detours.cpp'),
-	  os.path.join(Extension.sm_root, 'public', 'asm', 'asm.c')
-    ]
   
   if sdk.name == 'csgo':
     compiler.cxxincludes += [

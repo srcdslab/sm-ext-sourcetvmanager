@@ -32,6 +32,7 @@
 #include "extension.h"
 #include "forwards.h"
 #include "hltvserverwrapper.h"
+#include "commonhooks.h"
 
 CForwardManager g_pSTVForwards;
 
@@ -128,6 +129,8 @@ void CForwardManager::Init()
 	m_SpectatorDisconnectFwd = forwards->CreateForward("SourceTV_OnSpectatorDisconnect", ET_Ignore, 2, NULL, Param_Cell, Param_String);
 	m_SpectatorDisconnectedFwd = forwards->CreateForward("SourceTV_OnSpectatorDisconnected", ET_Ignore, 2, NULL, Param_Cell, Param_String);
 	m_SpectatorPutInServerFwd = forwards->CreateForward("SourceTV_OnSpectatorPutInServer", ET_Ignore, 1, NULL, Param_Cell);
+	m_SpectatorChatMessageFwd = forwards->CreateForward("SourceTV_OnSpectatorChatMessage", ET_Hook, 3, NULL, Param_Cell, Param_String, Param_String);
+	m_SpectatorChatMessagePostFwd = forwards->CreateForward("SourceTV_OnSpectatorChatMessage_Post", ET_Ignore, 3, NULL, Param_Cell, Param_String, Param_String);
 
 	m_ServerStartFwd = forwards->CreateForward("SourceTV_OnServerStart", ET_Ignore, 1, NULL, Param_Cell);
 	m_ServerShutdownFwd = forwards->CreateForward("SourceTV_OnServerShutdown", ET_Ignore, 1, NULL, Param_Cell);
@@ -142,6 +145,8 @@ void CForwardManager::Shutdown()
 	forwards->ReleaseForward(m_SpectatorDisconnectFwd);
 	forwards->ReleaseForward(m_SpectatorDisconnectedFwd);
 	forwards->ReleaseForward(m_SpectatorPutInServerFwd);
+	forwards->ReleaseForward(m_SpectatorChatMessageFwd);
+	forwards->ReleaseForward(m_SpectatorChatMessagePostFwd);
 
 	forwards->ReleaseForward(m_ServerStartFwd);
 	forwards->ReleaseForward(m_ServerShutdownFwd);
@@ -206,6 +211,9 @@ void CForwardManager::UnhookServer(HLTVServerWrapper *wrapper)
 
 void CForwardManager::HookClient(IClient *client)
 {
+	// Hook ExecuteStringCommand for chat messages
+	g_pSTVCommonHooks.AddSpectatorHook(this, client);
+
 	void *pGameClient = (void *)((intptr_t)client - 4);
 	if (m_bHasActivatePlayerOffset)
 		SH_ADD_MANUALHOOK(CBaseClient_ActivatePlayer, pGameClient, SH_MEMBER(this, &CForwardManager::OnSpectatorPutInServer), true);
@@ -221,6 +229,9 @@ void CForwardManager::HookClient(IClient *client)
 
 void CForwardManager::UnhookClient(IClient *client)
 {
+	// Remove ExecuteStringCommand hook
+	g_pSTVCommonHooks.RemoveSpectatorHook(this, client);
+
 	void *pGameClient = (void *)((intptr_t)client - 4);
 	if (m_bHasActivatePlayerOffset)
 		SH_REMOVE_MANUALHOOK(CBaseClient_ActivatePlayer, pGameClient, SH_MEMBER(this, &CForwardManager::OnSpectatorPutInServer), true);
@@ -421,6 +432,119 @@ void CForwardManager::OnSpectatorPutInServer()
 	RETURN_META(MRES_IGNORED);
 }
 
+bool CForwardManager::OnSpectatorExecuteStringCommand(const char *s)
+{
+	IClient *client = META_IFACEPTR(IClient);
+	if (!s || !s[0])
+		RETURN_META_VALUE(MRES_IGNORED, true);
+
+	CCommand args;
+	if (!args.Tokenize(s))
+		RETURN_META_VALUE(MRES_IGNORED, true);
+
+	// See if the client wants to chat.
+	if (!Q_stricmp(args[0], "say") && args.ArgC() > 1)
+	{
+		// TODO find correct hltvserver this client is connected to!
+
+		// Save the client index and message.
+		hltvserver->SetLastChatClient(client);
+		hltvserver->SetLastChatMessage(args[1]);
+
+		/*bool ret = SH_CALL(client, &IClient::ExecuteStringCommand)(s);
+
+		hltvserver->SetLastChatClient(0);
+		hltvserver->SetLastChatMessage(nullptr);
+		RETURN_META_VALUE(MRES_SUPERCEDE, ret);*/
+	}
+
+	RETURN_META_VALUE(MRES_IGNORED, true);
+}
+
+DETOUR_DECL_MEMBER2(DetourHLTVServer_BroadcastLocalChat, void, const char *, chat, const char *, chatgroup)
+{
+	// IServer is +8 from CHLTVServer due to multiple inheritance
+	IServer *server = (IServer *)((intptr_t)this + 8);
+	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(server);
+
+	char chatBuffer[256], groupBuffer[256];
+	// TODO: Use saved wrapper->GetLastChatMessage() and add "name : " manually again after plugins are done.
+	ke::SafeStrcpy(chatBuffer, sizeof(chatBuffer), chat);
+	ke::SafeStrcpy(groupBuffer, sizeof(groupBuffer), chatgroup);
+
+	if (wrapper)
+	{
+		// Call the forward for this message.
+		bool supercede = g_pSTVForwards.CallOnSpectatorChatMessage(wrapper, chatBuffer, sizeof(chatBuffer), groupBuffer, sizeof(groupBuffer));
+		if (supercede)
+			return;
+	}
+
+	// Call the engine function with our modified parameters.
+	DETOUR_MEMBER_CALL(DetourHLTVServer_BroadcastLocalChat)(chatBuffer, groupBuffer);
+
+	if (wrapper)
+	{
+		g_pSTVForwards.CallOnSpectatorChatMessage_Post(wrapper, chatBuffer, groupBuffer);
+	}
+}
+
+void CForwardManager::CreateBroadcastLocalChatDetour()
+{
+	if (m_bBroadcastLocalChatDetoured)
+		return;
+
+	m_DBroadcastLocalChat = DETOUR_CREATE_MEMBER(DetourHLTVServer_BroadcastLocalChat, "CHLTVServer::BroadcastLocalChat");
+
+	if (m_DBroadcastLocalChat != nullptr)
+	{
+		m_DBroadcastLocalChat->EnableDetour();
+		m_bBroadcastLocalChatDetoured = true;
+		return;
+	}
+	smutils->LogError(myself, "CHLTVServer::BroadcastLocalChat detour could not be initialized.");
+}
+
+void CForwardManager::RemoveBroadcastLocalChatDetour()
+{
+	if (m_DBroadcastLocalChat != nullptr)
+	{
+		m_DBroadcastLocalChat->Destroy();
+		m_DBroadcastLocalChat = nullptr;
+	}
+	m_bBroadcastLocalChatDetoured = false;
+}
+
+bool CForwardManager::CallOnSpectatorChatMessage(HLTVServerWrapper *server, char *msg, int msglen, char *chatgroup, int grouplen)
+{
+	int clientIndex = 0;
+	IClient *client = server->GetLastChatClient();
+	if (client)
+		clientIndex = client->GetPlayerSlot() + 1;
+
+	m_SpectatorChatMessageFwd->PushCell(clientIndex);
+	m_SpectatorChatMessageFwd->PushStringEx(msg, msglen, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	m_SpectatorChatMessageFwd->PushStringEx(chatgroup, grouplen, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+
+	cell_t res = Pl_Continue;
+	m_SpectatorChatMessageFwd->Execute(&res);
+	if (res >= Pl_Handled)
+		return true;
+	return false;
+}
+
+void CForwardManager::CallOnSpectatorChatMessage_Post(HLTVServerWrapper *server, const char *msg, const char *chatgroup)
+{
+	int clientIndex = 0;
+	IClient *client = server->GetLastChatClient();
+	if (client)
+		clientIndex = client->GetPlayerSlot() + 1;
+
+	m_SpectatorChatMessagePostFwd->PushCell(clientIndex);
+	m_SpectatorChatMessagePostFwd->PushString(msg);
+	m_SpectatorChatMessagePostFwd->PushString(chatgroup);
+	m_SpectatorChatMessagePostFwd->Execute();
+}
 
 // These two hooks are actually only hooked on windows.
 void CForwardManager::OnStartRecording_Post(const char *filename, bool bContinuously)
@@ -506,10 +630,10 @@ DETOUR_DECL_MEMBER0(DetourHLTVStopRecording, void)
 #endif	
 }
 
-bool CForwardManager::CreateStartRecordingDetour()
+void CForwardManager::CreateStartRecordingDetour()
 {
 	if (m_bStartRecordingDetoured)
-		return true;
+		return;
 
 	m_DStartRecording = DETOUR_CREATE_MEMBER(DetourHLTVStartRecording, "CHLTVDemoRecorder::StartRecording");
 
@@ -517,10 +641,10 @@ bool CForwardManager::CreateStartRecordingDetour()
 	{
 		m_DStartRecording->EnableDetour();
 		m_bStartRecordingDetoured = true;
-		return true;
+		return;
 	}
 	smutils->LogError(myself, "CHLTVDemoRecorder::StartRecording detour could not be initialized.");
-	return false;
+	return;
 }
 
 void CForwardManager::RemoveStartRecordingDetour()
@@ -533,10 +657,10 @@ void CForwardManager::RemoveStartRecordingDetour()
 	m_bStartRecordingDetoured = false;
 }
 
-bool CForwardManager::CreateStopRecordingDetour()
+void CForwardManager::CreateStopRecordingDetour()
 {
 	if (m_bStopRecordingDetoured)
-		return true;
+		return;
 
 	m_DStopRecording = DETOUR_CREATE_MEMBER(DetourHLTVStopRecording, "CHLTVDemoRecorder::StopRecording");
 
@@ -544,10 +668,10 @@ bool CForwardManager::CreateStopRecordingDetour()
 	{
 		m_DStopRecording->EnableDetour();
 		m_bStopRecordingDetoured = true;
-		return true;
+		return;
 	}
 	smutils->LogError(myself, "CHLTVDemoRecorder::StopRecording detour could not be initialized.");
-	return false;
+	return;
 }
 
 void CForwardManager::RemoveStopRecordingDetour()

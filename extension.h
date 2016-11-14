@@ -40,9 +40,7 @@
 #include "smsdk_ext.h"
 #include <IBinTools.h>
 #include <ISDKTools.h>
-#ifndef WIN32
 #include "CDetour/detours.h"
-#endif
 #include "ihltvdirector.h"
 #include "ihltv.h"
 #include "iserver.h"

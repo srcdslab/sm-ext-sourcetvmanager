@@ -48,13 +48,19 @@ public:
 	HLTVClientWrapper *GetClient(int index);
 	int GetInstanceNumber();
 
+	IClient *GetLastChatClient();
+	void SetLastChatClient(IClient *client);
+	const char *GetLastChatMessage();
+	void SetLastChatMessage(const char *msg);
+
+	bool OnHLTVBotExecuteStringCommand(const char *s);
+	bool OnHLTVBotExecuteStringCommand_Post(const char *s);
+
 private:
 	void Hook();
 	void Unhook();
 
 	// Hooks
-	bool OnHLTVBotExecuteStringCommand(const char *s);
-	bool OnHLTVBotExecuteStringCommand_Post(const char *s);
 	void OnHLTVServerShutdown();
 
 #if SOURCE_ENGINE != SE_CSGO
@@ -68,6 +74,9 @@ private:
 	IHLTVServer *m_HLTVServer = nullptr;
 	IDemoRecorder *m_DemoRecorder = nullptr;
 	ke::Vector<ke::AutoPtr<HLTVClientWrapper>> m_Clients;
+
+	IClient *m_LastChatClient = nullptr;
+	const char *m_LastChatMessage = nullptr;
 };
 
 class HLTVServerWrapperManager
