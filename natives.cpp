@@ -250,11 +250,12 @@ static bool BroadcastEventLocal(IHLTVServer *server, IGameEvent *event, bool bRe
 	{
 		unsigned char vstk[sizeof(void *) + sizeof(IGameEvent *) + sizeof(bool)];
 		unsigned char *vptr = vstk;
-
-		*(void **)vptr = (void *)server;
+		
+		IServer *iserver = server->GetBaseServer();
+		*(void **)vptr = (void *)((intptr_t)iserver - 8);
 		vptr += sizeof(void *);
 		*(IGameEvent **)vptr = event;
-		vptr += sizeof(char *);
+		vptr += sizeof(IGameEvent *);
 		*(bool *)vptr = bReliable;
 
 		pBroadcastEventLocal->Execute(vstk, NULL);
