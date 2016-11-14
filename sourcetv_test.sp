@@ -218,7 +218,7 @@ public Action:Cmd_SendHintMessage(client, args)
 	GetCmdArgString(sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new bool:bSent = SourceTV_BroadcastScreenMessage(false, "%s", sMsg);
+	new bool:bSent = SourceTV_BroadcastScreenMessage(BTarget_Everyone, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending hint message (success %d): %s", bSent, sMsg);
 	return Plugin_Handled;
 }
@@ -252,7 +252,7 @@ public Action:Cmd_SendChatMessage(client, args)
 	GetCmdArgString(sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new bool:bSent = SourceTV_BroadcastChatMessage(false, "%s", sMsg);
+	new bool:bSent = SourceTV_BroadcastChatMessage(BTarget_Everyone, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending chat message to all spectators (including relays) (success %d): %s", bSent, sMsg);
 	return Plugin_Handled;
 }
@@ -269,7 +269,7 @@ public Action:Cmd_SendChatMessageLocal(client, args)
 	GetCmdArgString(sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new bool:bSent = SourceTV_BroadcastChatMessage(true, "%s", sMsg);
+	new bool:bSent = SourceTV_BroadcastChatMessage(BTarget_OnlyLocal, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending chat message to local spectators (success %d): %s", bSent, sMsg);
 	return Plugin_Handled;
 }

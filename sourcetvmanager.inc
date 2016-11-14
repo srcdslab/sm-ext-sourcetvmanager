@@ -8,6 +8,13 @@
 #define MAX_SHOT_LENGTH				8.0  // maximum time of a cut (seconds)
 #define DEF_SHOT_LENGTH				6.0  // average time of a cut (seconds)
 
+enum SourceTVBroadcastTarget {
+	// Send message to all spectators including proxies.
+	BTarget_Everyone = 0,
+	// Send message only to locally connected spectators.
+	BTarget_OnlyLocal
+};
+
 /**
  * Get the current amount of running SourceTV instances.
  * Can usually only be 1 at max except for CSGO, which can have 2.
@@ -139,12 +146,12 @@ native Float:SourceTV_GetDelay();
  * Print a center message to all SourceTV spectators for ~2 seconds.
  * Like the tv_msg command.
  *
- * @param bLocalOnly	Send only to directly connected spectators or proxies as well?
+ * @param target	Send only to directly connected spectators or proxies as well?
  * @param format	The format string.
  * @param ...	Variable number of format string arguments.
  * @return	True if message was sent, false otherwise.
  */
-native bool:SourceTV_BroadcastScreenMessage(bool:bLocalOnly, const String:format[], any:...);
+native bool:SourceTV_BroadcastScreenMessage(SourceTVBroadcastTarget:target, const String:format[], any:...);
 
 /**
  * Prints text to the console of all connected SourceTV spectators.
@@ -158,12 +165,12 @@ native bool:SourceTV_BroadcastConsoleMessage(const String:format[], any:...);
 /**
  * Print a chat message to all SourceTV spectators.
  *
- * @param bLocalOnly	Send only to directly connected spectators or proxies as well?
+ * @param target	Send only to directly connected spectators or proxies as well?
  * @param format	The format string.
  * @param ...	Variable number of format string arguments.
  * @return	True if message was sent, false otherwise.
  */
-native bool:SourceTV_BroadcastChatMessage(bool:bLocalOnly, const String:format[], any:...);
+native bool:SourceTV_BroadcastChatMessage(SourceTVBroadcastTarget:target, const String:format[], any:...);
 
 
 /********************************************************************************
