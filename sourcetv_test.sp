@@ -20,7 +20,7 @@ public OnPluginStart()
 	RegConsoleCmd("sm_spechintmsg", Cmd_SendHintMessage);
 	RegConsoleCmd("sm_specchat", Cmd_SendChatMessage);
 	RegConsoleCmd("sm_specchatlocal", Cmd_SendChatMessageLocal);
-	RegConsoleCmd("sm_specmsg", Cmd_SendMessage);
+	RegConsoleCmd("sm_specconsole", Cmd_SendMessage);
 	RegConsoleCmd("sm_viewentity", Cmd_GetViewEntity);
 	RegConsoleCmd("sm_vieworigin", Cmd_GetViewOrigin);
 	RegConsoleCmd("sm_forcechasecam", Cmd_ForceChaseCameraShot);
@@ -35,6 +35,7 @@ public OnPluginStart()
 	RegConsoleCmd("sm_botcmd", Cmd_ExecuteStringCommand);
 	RegConsoleCmd("sm_speckick", Cmd_KickClient);
 	RegConsoleCmd("sm_specchatone", Cmd_PrintToChat);
+	RegConsoleCmd("sm_specconsoleone", Cmd_PrintToConsole);
 }
 
 public SourceTV_OnStartRecording(instance, const String:filename[])
@@ -228,7 +229,7 @@ public Action:Cmd_SendMessage(client, args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "Usage: sm_specmsg <message>");
+		ReplyToCommand(client, "Usage: sm_specconsole <message>");
 		return Plugin_Handled;
 	}
 	
@@ -449,5 +450,25 @@ public Action:Cmd_PrintToChat(client, args)
 	new iTarget = StringToInt(sIndex);
 	SourceTV_PrintToChat(iTarget, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending chat message to spectator %d: %s", iTarget, sMsg);
+	return Plugin_Handled;
+}
+
+public Action:Cmd_PrintToConsole(client, args)
+{
+	if (args < 2)
+	{
+		ReplyToCommand(client, "Usage: sm_specconsoleone <index> <message>");
+		return Plugin_Handled;
+	}
+	
+	new String:sIndex[16], String:sMsg[1024];
+	GetCmdArg(1, sIndex, sizeof(sIndex));
+	StripQuotes(sIndex);
+	GetCmdArg(2, sMsg, sizeof(sMsg));
+	StripQuotes(sMsg);
+	
+	new iTarget = StringToInt(sIndex);
+	SourceTV_PrintToConsole(iTarget, "%s", sMsg);
+	ReplyToCommand(client, "SourceTV sending console message to spectator %d: %s", iTarget, sMsg);
 	return Plugin_Handled;
 }

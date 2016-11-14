@@ -405,6 +405,17 @@ native SourceTV_KickClient(client, const String:sReason[]);
 native SourceTV_PrintToChat(client, const String:format[], any:...);
 
 /**
+ * Print a message to a single client's console.
+ * 
+ * @param client	The spectator client index.
+ * @param format	The format string.
+ * @param ...	Variable number of format string arguments.
+ * @noreturn
+ * @error	Invalid client index or not connected.
+ */
+native SourceTV_PrintToConsole(client, const String:format[], any:...);
+
+/**
  * Called when a spectator wants to connect to the SourceTV server.
  * This is called before any other validation has happened.
  * Similar to the OnClientPreConnectEx forward in the Connect extension by asherkin.
@@ -531,5 +542,6 @@ public __ext_stvmngr_SetNTVOptional()
 	MarkNativeAsOptional("SourceTV_GetClientPassword");
 	MarkNativeAsOptional("SourceTV_KickClient");
 	MarkNativeAsOptional("SourceTV_PrintToChat");
+	MarkNativeAsOptional("SourceTV_PrintToConsole");
 }
 #endif

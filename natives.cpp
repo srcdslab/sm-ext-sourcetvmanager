@@ -40,12 +40,13 @@ extern const sp_nativeinfo_t sourcetv_natives[];
 
 // Print to client consoles
 SH_DECL_MANUALHOOK0_void_vafmt(CBaseServer_BroadcastPrintf, 0, 0, 0);
-
-bool g_bHasClientPrintfOffset = false;
+// For print to chat
 SH_DECL_MANUALHOOK1_void(CBaseClient_FireGameEvent, 0, 0, 0, IGameEvent *);
 
-void SetupNativeCalls()
+bool g_bHasBroadcastPrintfOffset = false;
 bool g_bHasClientFireGameEventOffset = false;
+
+void SetupNativeCalls()
 {
 	int offset = -1;
 	if (!g_pGameConf->GetOffset("CBaseServer::BroadcastPrintf", &offset) || offset == -1)
@@ -55,7 +56,7 @@ bool g_bHasClientFireGameEventOffset = false;
 	else
 	{
 		SH_MANUALHOOK_RECONFIGURE(CBaseServer_BroadcastPrintf, offset, 0, 0);
-		g_bHasClientPrintfOffset = true;
+		g_bHasBroadcastPrintfOffset = true;
 	}
 
 	offset = -1;
@@ -307,7 +308,7 @@ static cell_t Native_BroadcastConsoleMessage(IPluginContext *pContext, const cel
 	if (hltvserver == nullptr)
 		return 0;
 
-	if (!g_bHasClientPrintfOffset)
+	if (!g_bHasBroadcastPrintfOffset)
 		return 0;
 
 	char buffer[1024];
@@ -854,6 +855,40 @@ static cell_t Native_PrintToChat(IPluginContext *pContext, const cell_t *params)
 	return 0;
 }
 
+// native SourceTV_PrintToConsole(client, const String:format[], any:...);
+static cell_t Native_PrintToConsole(IPluginContext *pContext, const cell_t *params)
+{
+	if (hltvserver == nullptr)
+		return 0;
+
+	cell_t client = params[1];
+	if (client < 1 || client > hltvserver->GetBaseServer()->GetClientCount())
+	{
+		pContext->ReportError("Invalid spectator client index %d.", client);
+		return 0;
+	}
+
+	HLTVClientWrapper *pClient = hltvserver->GetClient(client);
+	if (!pClient->IsConnected())
+	{
+		pContext->ReportError("Client %d is not connected.", client);
+		return 0;
+	}
+
+	char buffer[1024];
+	size_t len;
+	{
+		DetectExceptions eh(pContext);
+		len = smutils->FormatString(buffer, sizeof(buffer), pContext, params, 2);
+		if (eh.HasException())
+			return 0;
+	}
+
+	pClient->BaseClient()->ClientPrintf("%s\n", buffer);
+
+	return 0;
+}
+
 const sp_nativeinfo_t sourcetv_natives[] =
 {
 	{ "SourceTV_GetServerInstanceCount", Native_GetServerInstanceCount },
@@ -891,5 +926,6 @@ const sp_nativeinfo_t sourcetv_natives[] =
 	{ "SourceTV_GetClientPassword", Native_GetClientPassword },
 	{ "SourceTV_KickClient", Native_KickClient },
 	{ "SourceTV_PrintToChat", Native_PrintToChat },
+	{ "SourceTV_PrintToConsole", Native_PrintToConsole },
 	{ NULL, NULL },
 };
