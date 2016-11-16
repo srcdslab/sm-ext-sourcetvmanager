@@ -1,7 +1,7 @@
 //#undef REQUIRE_EXTENSIONS
 #include "sourcetvmanager"
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("common.phrases");
 
@@ -39,17 +39,17 @@ public OnPluginStart()
 	RegConsoleCmd("sm_spectitle", Cmd_SetTVTitle);
 }
 
-public SourceTV_OnStartRecording(instance, const String:filename[])
+public void SourceTV_OnStartRecording(int instance, const char[] filename)
 {
 	PrintToServer("Started recording sourcetv #%d demo to %s", instance, filename);
 }
 
-public SourceTV_OnStopRecording(instance, const String:filename[], recordingtick)
+public void SourceTV_OnStopRecording(int instance, const char[] filename, int recordingtick)
 {
 	PrintToServer("Stopped recording sourcetv #%d demo to %s (%d ticks)", instance, filename, recordingtick);
 }
 
-public bool:SourceTV_OnSpectatorPreConnect(const String:name[], String:password[255], const String:ip[], String:rejectReason[255])
+public bool SourceTV_OnSpectatorPreConnect(const char[] name, char password[255], const char[] ip, char rejectReason[255])
 {
 	PrintToServer("SourceTV spectator is connecting! Name: %s, pw: %s, ip: %s", name, password, ip);
 	if (StrEqual(password, "nope", false))
@@ -60,54 +60,54 @@ public bool:SourceTV_OnSpectatorPreConnect(const String:name[], String:password[
 	return true;
 }
 
-public SourceTV_OnServerStart(instance)
+public void SourceTV_OnServerStart(int instance)
 {
 	PrintToServer("SourceTV instance %d started.", instance);
 }
 
-public SourceTV_OnServerShutdown(instance)
+public void SourceTV_OnServerShutdown(int instance)
 {
 	PrintToServer("SourceTV instance %d shutdown.", instance);
 }
 
-public SourceTV_OnSpectatorConnected(client)
+public void SourceTV_OnSpectatorConnected(int client)
 {
 	PrintToServer("SourceTV client %d connected. (isconnected %d)", client, SourceTV_IsClientConnected(client));
 }
 
-public SourceTV_OnSpectatorPutInServer(client)
+public void SourceTV_OnSpectatorPutInServer(int client)
 {
 	PrintToServer("SourceTV client %d put in server.", client);
 }
 
-public SourceTV_OnSpectatorDisconnect(client, String:reason[255])
+public void SourceTV_OnSpectatorDisconnect(int client, char reason[255])
 {
 	PrintToServer("SourceTV client %d is disconnecting (isconnected %d) with reason -> %s.", client, SourceTV_IsClientConnected(client), reason);
 }
 
-public SourceTV_OnSpectatorDisconnected(client, const String:reason[255])
+public void SourceTV_OnSpectatorDisconnected(int client, const char reason[255])
 {
 	PrintToServer("SourceTV client %d disconnected (isconnected %d) with reason -> %s.", client, SourceTV_IsClientConnected(client), reason);
 }
 
-public Action:SourceTV_OnSpectatorChatMessage(client, String:message[255], String:chatgroup[255])
+public Action SourceTV_OnSpectatorChatMessage(int client, char message[255], char chatgroup[255])
 {
 	PrintToServer("SourceTV client %d (chatgroup \"%s\") writes: %s", client, chatgroup, message);
 	return Plugin_Continue;
 }
 
-public SourceTV_OnSpectatorChatMessage_Post(client, const String:message[], const String:chatgroup[])
+public void SourceTV_OnSpectatorChatMessage_Post(int client, const char[] message, const char[] chatgroup)
 {
 	PrintToServer("SourceTV client %d (chatgroup \"%s\") wrote: %s", client, chatgroup, message);
 }
 
-public Action:Cmd_GetServerCount(client, args)
+public Action Cmd_GetServerCount(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV server count: %d", SourceTV_GetServerInstanceCount());
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SelectServer(client, args)
+public Action Cmd_SelectServer(int client, int args)
 {
 	if (args < 1)
 	{
@@ -115,56 +115,56 @@ public Action:Cmd_SelectServer(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sArg[12];
+	char sArg[12];
 	GetCmdArg(1, sArg, sizeof(sArg));
-	new iInstance = StringToInt(sArg);
+	int iInstance = StringToInt(sArg);
 	
 	SourceTV_SelectServerInstance(iInstance);
 	ReplyToCommand(client, "SourceTV selecting server: %d", iInstance);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GetSelectedServer(client, args)
+public Action Cmd_GetSelectedServer(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV selected server: %d", SourceTV_GetSelectedServerInstance());
 	return Plugin_Handled;
 }
 
-public Action:Cmd_IsMasterProxy(client, args)
+public Action Cmd_IsMasterProxy(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV is master proxy: %d", SourceTV_IsMasterProxy());
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GetServerIP(client, args)
+public Action Cmd_GetServerIP(int client, int args)
 {
-	new String:sIP[32];
-	new bool:bSuccess = SourceTV_GetServerIP(sIP, sizeof(sIP));
+	char sIP[32];
+	bool bSuccess = SourceTV_GetServerIP(sIP, sizeof(sIP));
 	ReplyToCommand(client, "SourceTV server ip (ret %d): %s", bSuccess, sIP);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GetServerPort(client, args)
+public Action Cmd_GetServerPort(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV server port: %d", SourceTV_GetServerPort());
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GetBotIndex(client, args)
+public Action Cmd_GetBotIndex(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV bot index: %d", SourceTV_GetBotIndex());
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GetBroadcastTick(client, args)
+public Action Cmd_GetBroadcastTick(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV broadcast tick: %d", SourceTV_GetBroadcastTick());
 	return Plugin_Handled;
 }
 
-public Action:Cmd_Localstats(client, args)
+public Action Cmd_Localstats(int client, int args)
 {
-	new proxies, slots, specs;
+	int proxies, slots, specs;
 	if (!SourceTV_GetLocalStats(proxies, slots, specs))
 	{
 		ReplyToCommand(client, "SourceTV local stats: no server selected :(");
@@ -174,9 +174,9 @@ public Action:Cmd_Localstats(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_Globalstats(client, args)
+public Action Cmd_Globalstats(int client, int args)
 {
-	new proxies, slots, specs;
+	int proxies, slots, specs;
 	if (!SourceTV_GetGlobalStats(proxies, slots, specs))
 	{
 		ReplyToCommand(client, "SourceTV global stats: no server selected :(");
@@ -186,17 +186,17 @@ public Action:Cmd_Globalstats(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GetDelay(client, args)
+public Action Cmd_GetDelay(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV delay: %f", SourceTV_GetDelay());
 	return Plugin_Handled;
 }
 
-public Action:Cmd_Spectators(client, args)
+public Action Cmd_Spectators(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV spectator count: %d/%d", SourceTV_GetSpectatorCount(), SourceTV_GetClientCount());
-	new String:sName[64], String:sIP[16], String:sPassword[256];
-	for (new i=1;i<=SourceTV_GetClientCount();i++)
+	char sName[64], sIP[16], sPassword[256];
+	for (int i=1;i<=SourceTV_GetClientCount();i++)
 	{
 		if (!SourceTV_IsClientConnected(i))
 			continue;
@@ -209,7 +209,7 @@ public Action:Cmd_Spectators(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SendHintMessage(client, args)
+public Action Cmd_SendHintMessage(int client, int args)
 {
 	if (args < 1)
 	{
@@ -217,16 +217,16 @@ public Action:Cmd_SendHintMessage(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sMsg[1024];
+	char sMsg[1024];
 	GetCmdArgString(sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new bool:bSent = SourceTV_BroadcastScreenMessage(BTarget_Everyone, "%s", sMsg);
+	bool bSent = SourceTV_BroadcastScreenMessage(BTarget_Everyone, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending hint message (success %d): %s", bSent, sMsg);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SendMessage(client, args)
+public Action Cmd_SendMessage(int client, int args)
 {
 	if (args < 1)
 	{
@@ -234,16 +234,16 @@ public Action:Cmd_SendMessage(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sMsg[1024];
+	char sMsg[1024];
 	GetCmdArgString(sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new bool:bSent = SourceTV_BroadcastConsoleMessage("%s", sMsg);
+	bool bSent = SourceTV_BroadcastConsoleMessage("%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending console message (success %d): %s", bSent, sMsg);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SendChatMessage(client, args)
+public Action Cmd_SendChatMessage(int client, int args)
 {
 	if (args < 1)
 	{
@@ -251,16 +251,16 @@ public Action:Cmd_SendChatMessage(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sMsg[128];
+	char sMsg[128];
 	GetCmdArgString(sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new bool:bSent = SourceTV_BroadcastChatMessage(BTarget_Everyone, "%s", sMsg);
+	bool bSent = SourceTV_BroadcastChatMessage(BTarget_Everyone, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending chat message to all spectators (including relays) (success %d): %s", bSent, sMsg);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SendChatMessageLocal(client, args)
+public Action Cmd_SendChatMessageLocal(int client, int args)
 {
 	if (args < 1)
 	{
@@ -268,30 +268,30 @@ public Action:Cmd_SendChatMessageLocal(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sMsg[128];
+	char sMsg[128];
 	GetCmdArgString(sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new bool:bSent = SourceTV_BroadcastChatMessage(BTarget_OnlyLocal, "%s", sMsg);
+	bool bSent = SourceTV_BroadcastChatMessage(BTarget_OnlyLocal, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending chat message to local spectators (success %d): %s", bSent, sMsg);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GetViewEntity(client, args)
+public Action Cmd_GetViewEntity(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV view entity: %d", SourceTV_GetViewEntity());
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GetViewOrigin(client, args)
+public Action Cmd_GetViewOrigin(int client, int args)
 {
-	new Float:pos[3];
+	float pos[3];
 	SourceTV_GetViewOrigin(pos);
 	ReplyToCommand(client, "SourceTV view origin: %f %f %f", pos[0], pos[1], pos[2]);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_ForceChaseCameraShot(client, args)
+public Action Cmd_ForceChaseCameraShot(int client, int args)
 {
 	if (args < 1)
 	{
@@ -299,17 +299,17 @@ public Action:Cmd_ForceChaseCameraShot(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sTarget[PLATFORM_MAX_PATH];
+	char sTarget[PLATFORM_MAX_PATH];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
 	StripQuotes(sTarget);
-	new iTarget = FindTarget(client, sTarget, false, false);
+	int iTarget = FindTarget(client, sTarget, false, false);
 	if (iTarget == -1)
 		return Plugin_Handled;
 	
-	new bool:bInEye;
+	bool bInEye;
 	if (args >= 2)
 	{
-		new String:sInEye[16];
+		char sInEye[16];
 		GetCmdArg(2, sInEye, sizeof(sInEye));
 		StripQuotes(sInEye);
 		bInEye = sInEye[0] == '1';
@@ -320,7 +320,7 @@ public Action:Cmd_ForceChaseCameraShot(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_StartRecording(client, args)
+public Action Cmd_StartRecording(int client, int args)
 {
 	if (args < 1)
 	{
@@ -328,7 +328,7 @@ public Action:Cmd_StartRecording(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sFilename[PLATFORM_MAX_PATH];
+	char sFilename[PLATFORM_MAX_PATH];
 	GetCmdArgString(sFilename, sizeof(sFilename));
 	StripQuotes(sFilename);
 	
@@ -342,34 +342,34 @@ public Action:Cmd_StartRecording(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_StopRecording(client, args)
+public Action Cmd_StopRecording(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV stopped recording %d", SourceTV_StopRecording());
 	return Plugin_Handled;
 }
 
-public Action:Cmd_IsRecording(client, args)
+public Action Cmd_IsRecording(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV is recording: %d", SourceTV_IsRecording());
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GetDemoFileName(client, args)
+public Action Cmd_GetDemoFileName(int client, int args)
 {
-	new String:sFileName[PLATFORM_MAX_PATH];
+	char sFileName[PLATFORM_MAX_PATH];
 	ReplyToCommand(client, "SourceTV demo file name (%d): %s", SourceTV_GetDemoFileName(sFileName, sizeof(sFileName)), sFileName);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_GetRecordTick(client, args)
+public Action Cmd_GetRecordTick(int client, int args)
 {
 	ReplyToCommand(client, "SourceTV recording tick: %d", SourceTV_GetRecordingTick());
 	return Plugin_Handled;
 }
 	
-public Action:Cmd_SpecStatus(client, args)
+public Action Cmd_SpecStatus(int client, int args)
 {
-	new iSourceTV = SourceTV_GetBotIndex();
+	int iSourceTV = SourceTV_GetBotIndex();
 	if (!iSourceTV)
 		return Plugin_Handled;
 	FakeClientCommand(iSourceTV, "status");
@@ -377,7 +377,7 @@ public Action:Cmd_SpecStatus(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_PrintDemoConsole(client, args)
+public Action Cmd_PrintDemoConsole(int client, int args)
 {
 	if (args < 1)
 	{
@@ -385,16 +385,16 @@ public Action:Cmd_PrintDemoConsole(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sMsg[1024];
+	char sMsg[1024];
 	GetCmdArgString(sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new bool:bSent = SourceTV_PrintToDemoConsole("%s", sMsg);
+	bool bSent = SourceTV_PrintToDemoConsole("%s", sMsg);
 	ReplyToCommand(client, "SourceTV printing to demo console (success %d): %s", bSent, sMsg);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_ExecuteStringCommand(client, args)
+public Action Cmd_ExecuteStringCommand(int client, int args)
 {
 	if (args < 1)
 	{
@@ -402,11 +402,11 @@ public Action:Cmd_ExecuteStringCommand(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sCmd[1024];
+	char sCmd[1024];
 	GetCmdArgString(sCmd, sizeof(sCmd));
 	StripQuotes(sCmd);
 	
-	new iSourceTV = SourceTV_GetBotIndex();
+	int iSourceTV = SourceTV_GetBotIndex();
 	if (!iSourceTV)
 		return Plugin_Handled;
 	FakeClientCommand(iSourceTV, sCmd);
@@ -414,7 +414,7 @@ public Action:Cmd_ExecuteStringCommand(client, args)
 	return Plugin_Handled;
 }
 
-public Action:Cmd_KickClient(client, args)
+public Action Cmd_KickClient(int client, int args)
 {
 	if (args < 2)
 	{
@@ -422,19 +422,19 @@ public Action:Cmd_KickClient(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sIndex[16], String:sMsg[1024];
+	char sIndex[16], sMsg[1024];
 	GetCmdArg(1, sIndex, sizeof(sIndex));
 	StripQuotes(sIndex);
 	GetCmdArg(2, sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new iTarget = StringToInt(sIndex);
+	int iTarget = StringToInt(sIndex);
 	SourceTV_KickClient(iTarget, sMsg);
 	ReplyToCommand(client, "SourceTV kicking spectator %d with reason %s", iTarget, sMsg);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_PrintToChat(client, args)
+public Action Cmd_PrintToChat(int client, int args)
 {
 	if (args < 2)
 	{
@@ -442,19 +442,19 @@ public Action:Cmd_PrintToChat(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sIndex[16], String:sMsg[1024];
+	char sIndex[16], sMsg[1024];
 	GetCmdArg(1, sIndex, sizeof(sIndex));
 	StripQuotes(sIndex);
 	GetCmdArg(2, sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new iTarget = StringToInt(sIndex);
+	int iTarget = StringToInt(sIndex);
 	SourceTV_PrintToChat(iTarget, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending chat message to spectator %d: %s", iTarget, sMsg);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_PrintToConsole(client, args)
+public Action Cmd_PrintToConsole(int client, int args)
 {
 	if (args < 2)
 	{
@@ -462,19 +462,19 @@ public Action:Cmd_PrintToConsole(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sIndex[16], String:sMsg[1024];
+	char sIndex[16], sMsg[1024];
 	GetCmdArg(1, sIndex, sizeof(sIndex));
 	StripQuotes(sIndex);
 	GetCmdArg(2, sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new iTarget = StringToInt(sIndex);
+	int iTarget = StringToInt(sIndex);
 	SourceTV_PrintToConsole(iTarget, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV sending console message to spectator %d: %s", iTarget, sMsg);
 	return Plugin_Handled;
 }
 
-public Action:Cmd_SetTVTitle(client, args)
+public Action Cmd_SetTVTitle(int client, int args)
 {
 	if (args < 2)
 	{
@@ -482,13 +482,13 @@ public Action:Cmd_SetTVTitle(client, args)
 		return Plugin_Handled;
 	}
 	
-	new String:sIndex[16], String:sMsg[1024];
+	char sIndex[16], sMsg[1024];
 	GetCmdArg(1, sIndex, sizeof(sIndex));
 	StripQuotes(sIndex);
 	GetCmdArg(2, sMsg, sizeof(sMsg));
 	StripQuotes(sMsg);
 	
-	new iTarget = StringToInt(sIndex);
+	int iTarget = StringToInt(sIndex);
 	SourceTV_SetClientTVTitle(iTarget, "%s", sMsg);
 	ReplyToCommand(client, "SourceTV set stream title of spectator %d to %s", iTarget, sMsg);
 	return Plugin_Handled;
