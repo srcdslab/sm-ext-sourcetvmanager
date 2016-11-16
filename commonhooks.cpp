@@ -43,11 +43,13 @@ SH_DECL_HOOK1(IClient, ExecuteStringCommand, SH_NOATTRIB, 0, bool, const char *)
 void CCommonHooks::AddSpectatorHook(CForwardManager *fwdmgr, IClient *client)
 {
 	SH_ADD_HOOK(IClient, ExecuteStringCommand, client, SH_MEMBER(fwdmgr, &CForwardManager::OnSpectatorExecuteStringCommand), false);
+	SH_ADD_HOOK(IClient, ExecuteStringCommand, client, SH_MEMBER(fwdmgr, &CForwardManager::OnSpectatorExecuteStringCommand_Post), true);
 }
 
 void CCommonHooks::RemoveSpectatorHook(CForwardManager *fwdmgr, IClient *client)
 {
 	SH_REMOVE_HOOK(IClient, ExecuteStringCommand, client, SH_MEMBER(fwdmgr, &CForwardManager::OnSpectatorExecuteStringCommand), false);
+	SH_REMOVE_HOOK(IClient, ExecuteStringCommand, client, SH_MEMBER(fwdmgr, &CForwardManager::OnSpectatorExecuteStringCommand_Post), true);
 }
 
 void CCommonHooks::AddHLTVClientHook(HLTVServerWrapper *wrapper, IClient *client)

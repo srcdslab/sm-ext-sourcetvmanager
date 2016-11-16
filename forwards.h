@@ -86,6 +86,7 @@ public:
 	void CallOnSpectatorChatMessage_Post(HLTVServerWrapper *server, const char *msg, const char *chatgroup);
 
 	bool OnSpectatorExecuteStringCommand(const char *s);
+	bool OnSpectatorExecuteStringCommand_Post(const char *s);
 	void CreateBroadcastLocalChatDetour();
 	void RemoveBroadcastLocalChatDetour();
 

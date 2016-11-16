@@ -434,6 +434,9 @@ void CForwardManager::OnSpectatorPutInServer()
 
 bool CForwardManager::OnSpectatorExecuteStringCommand(const char *s)
 {
+	if (!hltvserver)
+		RETURN_META_VALUE(MRES_IGNORED, true);
+
 	IClient *client = META_IFACEPTR(IClient);
 	if (!s || !s[0])
 		RETURN_META_VALUE(MRES_IGNORED, true);
@@ -450,13 +453,21 @@ bool CForwardManager::OnSpectatorExecuteStringCommand(const char *s)
 		// Save the client index and message.
 		hltvserver->SetLastChatClient(client);
 		hltvserver->SetLastChatMessage(args[1]);
-
-		/*bool ret = SH_CALL(client, &IClient::ExecuteStringCommand)(s);
-
-		hltvserver->SetLastChatClient(0);
-		hltvserver->SetLastChatMessage(nullptr);
-		RETURN_META_VALUE(MRES_SUPERCEDE, ret);*/
 	}
+
+	RETURN_META_VALUE(MRES_IGNORED, true);
+}
+
+// Reset the pointers after the command was executed.
+bool CForwardManager::OnSpectatorExecuteStringCommand_Post(const char *s)
+{
+	if (!hltvserver)
+		RETURN_META_VALUE(MRES_IGNORED, true);
+
+	// TODO find correct hltvserver this client is connected to!
+
+	hltvserver->SetLastChatClient(nullptr);
+	hltvserver->SetLastChatMessage(nullptr);
 
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
@@ -467,26 +478,47 @@ DETOUR_DECL_MEMBER2(DetourHLTVServer_BroadcastLocalChat, void, const char *, cha
 	IServer *server = (IServer *)((intptr_t)this + 8);
 	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(server);
 
+	// Copy content in changeable buffer.
 	char chatBuffer[256], groupBuffer[256];
-	// TODO: Use saved wrapper->GetLastChatMessage() and add "name : " manually again after plugins are done.
 	ke::SafeStrcpy(chatBuffer, sizeof(chatBuffer), chat);
 	ke::SafeStrcpy(groupBuffer, sizeof(groupBuffer), chatgroup);
 
+	// See if we can provide only the chat message without the name printed before.
+	// The engine formats the chat like "Name : Message" before calling BroadcastLocalChat..
 	if (wrapper)
 	{
-		// Call the forward for this message.
-		bool supercede = g_pSTVForwards.CallOnSpectatorChatMessage(wrapper, chatBuffer, sizeof(chatBuffer), groupBuffer, sizeof(groupBuffer));
-		if (supercede)
-			return;
+		const char *msg = wrapper->GetLastChatMessage();
+		// Use only the typed text if possible
+		if (msg)
+			ke::SafeStrcpy(chatBuffer, sizeof(chatBuffer), msg);
 	}
 
-	// Call the engine function with our modified parameters.
-	DETOUR_MEMBER_CALL(DetourHLTVServer_BroadcastLocalChat)(chatBuffer, groupBuffer);
+	// Call the forward for this message.
+	bool supercede = g_pSTVForwards.CallOnSpectatorChatMessage(wrapper, chatBuffer, sizeof(chatBuffer), groupBuffer, sizeof(groupBuffer));
+	if (supercede)
+		return;
 
+	// Use the potentially modified strings.
+	chat = chatBuffer;
+	chatgroup = groupBuffer;
+
+	char messageBuffer[1024];
+	// Might have to add the name again, if we had the chat message in our hands.
 	if (wrapper)
 	{
-		g_pSTVForwards.CallOnSpectatorChatMessage_Post(wrapper, chatBuffer, groupBuffer);
+		if (wrapper->GetLastChatMessage())
+		{
+			// Format the message the same as the engine does.
+			ke::SafeSprintf(messageBuffer, sizeof(messageBuffer), "%s : %s", wrapper->GetLastChatClient()->GetClientName(), chatBuffer);
+			chat = messageBuffer;
+		}
 	}
+	
+	// Print the message
+	DETOUR_MEMBER_CALL(DetourHLTVServer_BroadcastLocalChat)(chat, chatgroup);
+	
+	// Call the post message forward with the changed output.
+	g_pSTVForwards.CallOnSpectatorChatMessage_Post(wrapper, chatBuffer, groupBuffer);
 }
 
 void CForwardManager::CreateBroadcastLocalChatDetour()
@@ -518,9 +550,12 @@ void CForwardManager::RemoveBroadcastLocalChatDetour()
 bool CForwardManager::CallOnSpectatorChatMessage(HLTVServerWrapper *server, char *msg, int msglen, char *chatgroup, int grouplen)
 {
 	int clientIndex = 0;
-	IClient *client = server->GetLastChatClient();
-	if (client)
-		clientIndex = client->GetPlayerSlot() + 1;
+	if (server)
+	{
+		IClient *client = server->GetLastChatClient();
+		if (client)
+			clientIndex = client->GetPlayerSlot() + 1;
+	}
 
 	m_SpectatorChatMessageFwd->PushCell(clientIndex);
 	m_SpectatorChatMessageFwd->PushStringEx(msg, msglen, SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
@@ -536,9 +571,12 @@ bool CForwardManager::CallOnSpectatorChatMessage(HLTVServerWrapper *server, char
 void CForwardManager::CallOnSpectatorChatMessage_Post(HLTVServerWrapper *server, const char *msg, const char *chatgroup)
 {
 	int clientIndex = 0;
-	IClient *client = server->GetLastChatClient();
-	if (client)
-		clientIndex = client->GetPlayerSlot() + 1;
+	if (server)
+	{
+		IClient *client = server->GetLastChatClient();
+		if (client)
+			clientIndex = client->GetPlayerSlot() + 1;
+	}
 
 	m_SpectatorChatMessagePostFwd->PushCell(clientIndex);
 	m_SpectatorChatMessagePostFwd->PushString(msg);
