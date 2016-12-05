@@ -54,7 +54,7 @@ SH_DECL_HOOK1_void(IClient, Disconnect, SH_NOATTRIB, 0, const char *);
 SH_DECL_MANUALHOOK1_void(CBaseClient_Disconnect, 0, 0, 0, const char *);
 #endif // !WIN32
 
-#elif SOURCE_ENGINE == SE_LEFT4DEAD
+#elif SOURCE_ENGINE == SE_LEFT4DEAD || SOURCE_ENGINE == SE_LEFT4DEAD2
 SH_DECL_MANUALHOOK10(CHLTVServer_ConnectClient, 0, 0, 0, IClient *, const netadr_t &, int, int, int, const char *, const char *, const char *, int, CUtlVector<CLC_SplitPlayerConnect *> &, bool);
 SH_DECL_MANUALHOOK1_void_vafmt(CHLTVServer_RejectConnection, 0, 0, 0, const netadr_t &);
 SH_DECL_HOOK0_void_vafmt(IClient, Disconnect, SH_NOATTRIB, 0);
@@ -296,7 +296,7 @@ char passwordBuffer[255];
 #if SOURCE_ENGINE == SE_CSGO
 // CHLTVServer::ConnectClient(ns_address const&, int, int, int, char const*, char const*, char const*, int, CUtlVector<CNetMessagePB<16, CCLCMsg_SplitPlayerConnect, 0, true> *, CUtlMemory<CNetMessagePB<16, CCLCMsg_SplitPlayerConnect, 0, true> *, int>> &, bool, CrossPlayPlatform_t, unsigned char const*, int)
 IClient *CForwardManager::OnSpectatorConnect(const netadr_t & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown)
-#elif SOURCE_ENGINE == SE_LEFT4DEAD
+#elif SOURCE_ENGINE == SE_LEFT4DEAD || SOURCE_ENGINE == SE_LEFT4DEAD2
 IClient *CForwardManager::OnSpectatorConnect(const netadr_t & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<CLC_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown)
 #else
 IClient *CForwardManager::OnSpectatorConnect(netadr_t & address, int nProtocol, int iChallenge, int iClientChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie)
@@ -334,7 +334,7 @@ IClient *CForwardManager::OnSpectatorConnect(netadr_t & address, int nProtocol, 
 	{
 		if (m_bHasRejectConnectionOffset)
 		{
-#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_LEFT4DEAD
+#if SOURCE_ENGINE == SE_CSGO || SOURCE_ENGINE == SE_LEFT4DEAD || SOURCE_ENGINE == SE_LEFT4DEAD2
 			SH_MCALL(server, CHLTVServer_RejectConnection)(address, rejectReason);
 #else
 			SH_MCALL(server, CHLTVServer_RejectConnection)(address, iClientChallenge, rejectReason);
@@ -346,7 +346,7 @@ IClient *CForwardManager::OnSpectatorConnect(netadr_t & address, int nProtocol, 
 	// Call the original function.
 #if SOURCE_ENGINE == SE_CSGO
 	IClient *client = SH_MCALL(server, CHLTVServer_ConnectClient)(address, nProtocol, iChallenge, nAuthProtocol, pchName, passwordBuffer, pCookie, cbCookie, pSplitPlayerConnectVector, bUnknown, platform, pUnknown, iUnknown);
-#elif SOURCE_ENGINE == SE_LEFT4DEAD
+#elif SOURCE_ENGINE == SE_LEFT4DEAD || SOURCE_ENGINE == SE_LEFT4DEAD2
 	IClient *client = SH_MCALL(server, CHLTVServer_ConnectClient)(address, nProtocol, iChallenge, nAuthProtocol, pchName, passwordBuffer, pCookie, cbCookie, pSplitPlayerConnectVector, bUnknown);
 #else
 	IClient *client = SH_MCALL(server, CHLTVServer_ConnectClient)(address, nProtocol, iChallenge, iClientChallenge, nAuthProtocol, pchName, passwordBuffer, pCookie, cbCookie);

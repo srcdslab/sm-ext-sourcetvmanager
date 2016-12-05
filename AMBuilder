@@ -31,7 +31,7 @@ else:
 
 project.sources += sourceFiles
   
-for sdk_name in ['css', 'tf2', 'dods', 'hl2dm', 'csgo', 'l4d']:
+for sdk_name in ['css', 'tf2', 'dods', 'hl2dm', 'csgo', 'l4d', 'l4d2']:
   if sdk_name not in Extension.sdks:
     continue
   sdk = Extension.sdks[sdk_name]
