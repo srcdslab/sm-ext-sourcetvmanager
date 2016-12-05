@@ -26,6 +26,9 @@ public:
 	virtual void	RecordPacket(void) = 0;
 	virtual void	RecordServerClasses(ServerClass *pClasses) = 0;
 	virtual void	RecordStringTables(void) = 0;
+#if SOURCE_ENGINE == SE_LEFT4DEAD
+	virtual void	RecordCustomData(int, void const *, unsigned int) = 0;
+#endif
 
 	virtual void	ResetDemoInterpolation(void) = 0;
 };

@@ -99,6 +99,9 @@ private:
 #if SOURCE_ENGINE == SE_CSGO
 	void OnStopRecording(CGameInfo const *info);
 	IClient *OnSpectatorConnect(const netadr_t & address, int nProtocol, int iChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie, CUtlVector<NetMsg_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown, CrossPlayPlatform_t platform, const unsigned char *pUnknown, int iUnknown);
+#elif SOURCE_ENGINE == SE_LEFT4DEAD
+	void OnStopRecording();
+	IClient *OnSpectatorConnect(const netadr_t & address, int nProtocol, int iChallenge, int iClientChallenge, const char * pchName, const char * pchPassword, const char * pCookie, int, CUtlVector<CLC_SplitPlayerConnect *> &pSplitPlayerConnectVector, bool bUnknown);
 #else
 	void OnStopRecording();
 	IClient *OnSpectatorConnect(netadr_t &address, int nProtocol, int iChallenge, int iClientChallenge, int nAuthProtocol, const char *pchName, const char *pchPassword, const char *pCookie, int cbCookie);

@@ -254,7 +254,12 @@ void HLTVServerWrapper::OnCGameClient_ClientPrintf_Post(const char* buf)
 	IClient *pClient = (IClient *)((intptr_t)pGameClient + 4);
 	HandleClientPrintf(pClient, buf);
 
+#if SOURCE_ENGINE == SE_LEFT4DEAD
+	// Left4Dead doesn't check the netchan before using it
+	RETURN_META(MRES_SUPERCEDE);
+#else
 	RETURN_META(MRES_IGNORED);
+#endif
 }
 
 void HLTVServerWrapper::OnIClient_ClientPrintf_Post(const char* buf)
@@ -262,7 +267,12 @@ void HLTVServerWrapper::OnIClient_ClientPrintf_Post(const char* buf)
 	IClient *pClient = META_IFACEPTR(IClient);
 	HandleClientPrintf(pClient, buf);
 
+#if SOURCE_ENGINE == SE_LEFT4DEAD
+	// Left4Dead doesn't check the netchan before using it
+	RETURN_META(MRES_SUPERCEDE);
+#else
 	RETURN_META(MRES_IGNORED);
+#endif
 }
 
 void HLTVServerWrapper::HandleClientPrintf(IClient *pClient, const char* buf)
