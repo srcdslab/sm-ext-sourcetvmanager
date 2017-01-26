@@ -1,7 +1,12 @@
 "Games"
 {
-	"csgo"
+	"#default"
 	{
+		"#supported"
+		{
+			"engine"	"csgo"
+		}
+		
 		"Addresses"
 		{
 			"host_client"
