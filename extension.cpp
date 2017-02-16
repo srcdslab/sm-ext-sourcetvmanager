@@ -205,7 +205,10 @@ void SourceTVManager::SelectSourceTVServer(IHLTVServer *hltv)
 #if SOURCE_ENGINE == SE_CSGO
 void SourceTVManager::OnAddHLTVServer_Post(IHLTVServer *hltv)
 {
-	g_HLTVServers.AddServer(hltv);
+	// Only hook this server if it's a new one.
+	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(hltv);
+	if (!wrapper)
+		g_HLTVServers.AddServer(hltv);
 
 	// We already selected some SourceTV server. Keep it.
 	if (hltvserver != nullptr)
@@ -256,7 +259,8 @@ void SourceTVManager::OnSetHLTVServer_Post(IHLTVServer *hltv)
 		// Doesn't hurt either..
 		g_HLTVServers.RemoveServer(hltvserver->GetHLTVServer(), true);
 	}
-	else
+	// Only hook this server if it's a new one.
+	else if (!hltvserver || g_HLTVServers.GetWrapper(hltv) != hltvserver)
 	{
 		g_HLTVServers.AddServer(hltv);
 	}
