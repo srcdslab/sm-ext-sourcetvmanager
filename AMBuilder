@@ -55,6 +55,10 @@ for sdk_name in ['css', 'tf2', 'dods', 'hl2dm', 'csgo', 'l4d', 'l4d2']:
       vs_year = ''
       if msvc_ver == 1800:
         vs_year = '2013'
+      elif msvc_ver == 1900:
+        vs_year = '2015'
+      elif msvc_ver == 1910:
+        vs_year = '2017'
       else:
         raise Exception('Cannot find libprotobuf for MSVC version "' + str(compiler.version) + '"')
 
