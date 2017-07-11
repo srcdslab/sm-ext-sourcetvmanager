@@ -14,7 +14,7 @@
 				"windows"
 				{
 					"signature"	"host_client"
-					"read" "46"
+					"read" "26"
 				}
 				"linux"
 				{
@@ -33,7 +33,7 @@
 				"linux"
 				{
 					"signature"	"CHLTVServer_DemoRecorderRef"
-					"read"	"34"
+					"read"	"26"
 				}
 			}
 		}
@@ -65,8 +65,8 @@
 			
 			"CBaseClient::ActivatePlayer"
 			{
-				"windows"	"27"
-				"linux"	"65"
+				"windows"	"28"
+				"linux"	"66"
 			}
 			
 			"CBaseClient::FireGameEvent"
@@ -118,7 +118,7 @@
 				"library"	"engine"
 				// ping(CCommand const&) "Client ping times:\n"
 				"linux"	"\x55\x89\xE5\x57\x56\x53\x83\xEC\x3C\x8B\x45\x08\x83\xB8\x08\x05\x00\x00\x03"
-				"windows" "\x55\x8B\xEC\x83\xE4\xC0\x8B\x4D\x08\x83\xEC\x34"
+				"windows" "\x55\x8B\xEC\x51\x8B\x4D\x08\x83\xB9\x08\x05\x00\x00\x03"
 			}
 			
 			"CHLTVServer::BroadcastEventLocal"
