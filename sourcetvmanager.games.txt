@@ -33,7 +33,7 @@
 				"linux"
 				{
 					"signature"	"CHLTVServer_DemoRecorderRef"
-					"read"	"26"
+					"read"	"38"
 				}
 			}
 		}
