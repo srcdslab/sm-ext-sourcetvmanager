@@ -19,7 +19,7 @@
 				"linux"
 				{
 					"signature" "host_client"
-					"read" "31"
+					"read" "49"
 				}
 			}
 			
