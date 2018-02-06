@@ -13,7 +13,14 @@ sourceFiles = [
   'hltvdirectorwrapper.cpp',
   'hltvclientwrapper.cpp',
   os.path.join(Extension.sm_root, 'public', 'CDetour', 'detours.cpp'),
-  os.path.join(Extension.sm_root, 'public', 'asm', 'asm.c')
+  os.path.join(Extension.sm_root, 'public', 'asm', 'asm.c'),
+# SM 1.10+ compilation changes
+#  os.path.join(Extension.sm_root, 'public', 'libudis86', 'decode.c'),
+#  os.path.join(Extension.sm_root, 'public', 'libudis86', 'itab.c'),
+#  os.path.join(Extension.sm_root, 'public', 'libudis86', 'syn-att.c'),
+#  os.path.join(Extension.sm_root, 'public', 'libudis86', 'syn-intel.c'),
+#  os.path.join(Extension.sm_root, 'public', 'libudis86', 'syn.c'),
+#  os.path.join(Extension.sm_root, 'public', 'libudis86', 'udis86.c')
 ]
 
 ###############
@@ -30,6 +37,8 @@ else:
   project.sources += [os.path.join(Extension.sm_root, 'public', 'smsdk_ext.cpp')]
 
 project.sources += sourceFiles
+
+project.compiler.defines += ['HAVE_STRING_H'];
   
 for sdk_name in ['css', 'tf2', 'dods', 'hl2dm', 'csgo', 'l4d', 'l4d2']:
   if sdk_name not in Extension.sdks:
@@ -55,10 +64,8 @@ for sdk_name in ['css', 'tf2', 'dods', 'hl2dm', 'csgo', 'l4d', 'l4d2']:
       vs_year = ''
       if msvc_ver == 1800:
         vs_year = '2013'
-      elif msvc_ver == 1900:
+      elif 1900 <= msvc_ver < 2000:
         vs_year = '2015'
-      elif msvc_ver == 1910:
-        vs_year = '2017'
       else:
         raise Exception('Cannot find libprotobuf for MSVC version "' + str(compiler.version) + '"')
 
