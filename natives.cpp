@@ -830,10 +830,7 @@ static cell_t Native_PrintToChat(IPluginContext *pContext, const cell_t *params)
 		// There's no way to set the current translation without a client index, so we'll save / restore the language on the relay.
 		int iHLTVClient = hltvserver->GetHLTVServer()->GetHLTVSlot() + 1;
 		IGamePlayer *pHLTVClient = playerhelpers->GetGamePlayer(iHLTVClient);
-
-		unsigned int langid = translator->GetServerLanguage();
-		translator->GetLanguageByName(pClient->BaseClient()->GetUserSetting("cl_language"), &langid);
-		pHLTVClient->SetLanguageId(langid);
+		pHLTVClient->SetLanguageId(pClient->GetLanguageId());
 
 		int restoreTarget = translator->SetGlobalTarget(hltvserver->GetHLTVServer()->GetHLTVSlot() + 1);
 #endif
@@ -903,10 +900,7 @@ static cell_t Native_PrintToConsole(IPluginContext *pContext, const cell_t *para
 		// There's no way to set the current translation without a client index, so we'll save / restore the language on the relay.
 		int iHLTVClient = hltvserver->GetHLTVServer()->GetHLTVSlot() + 1;
 		IGamePlayer *pHLTVClient = playerhelpers->GetGamePlayer(iHLTVClient);
-
-		unsigned int langid = translator->GetServerLanguage();
-		translator->GetLanguageByName(pClient->BaseClient()->GetUserSetting("cl_language"), &langid);
-		pHLTVClient->SetLanguageId(langid);
+		pHLTVClient->SetLanguageId(pClient->GetLanguageId());
 
 		int restoreTarget = translator->SetGlobalTarget(hltvserver->GetHLTVServer()->GetHLTVSlot() + 1);
 #endif
