@@ -828,18 +828,18 @@ static cell_t Native_PrintToChat(IPluginContext *pContext, const cell_t *params)
 
 #if SOURCE_ENGINE != SE_CSGO
 		// There's no way to set the current translation without a client index, so we'll save / restore the language on the relay.
-		int iHLTVClient = hltvserver->GetHLTVServer()->GetHLTVSlot() + 1;
-		IGamePlayer *pHLTVClient = playerhelpers->GetGamePlayer(iHLTVClient);
-		pHLTVClient->SetLanguageId(pClient->GetLanguageId());
+		int iHLTVRelay = hltvserver->GetHLTVServer()->GetHLTVSlot() + 1;
+		IGamePlayer *pHLTVRelay = playerhelpers->GetGamePlayer(iHLTVRelay);
+		pHLTVRelay->SetLanguageId(pClient->GetLanguageId());
 
-		int restoreTarget = translator->SetGlobalTarget(hltvserver->GetHLTVServer()->GetHLTVSlot() + 1);
+		int restoreTarget = translator->SetGlobalTarget(iHLTVRelay);
 #endif
 
 		DetectExceptions eh(pContext);
 		len = smutils->FormatString(buffer, sizeof(buffer), pContext, params, 2);
 
 #if SOURCE_ENGINE != SE_CSGO
-		pHLTVClient->SetLanguageId(translator->GetServerLanguage());
+		pHLTVRelay->SetLanguageId(translator->GetServerLanguage());
 		translator->SetGlobalTarget(restoreTarget);
 #endif
 
@@ -898,18 +898,18 @@ static cell_t Native_PrintToConsole(IPluginContext *pContext, const cell_t *para
 
 #if SOURCE_ENGINE != SE_CSGO
 		// There's no way to set the current translation without a client index, so we'll save / restore the language on the relay.
-		int iHLTVClient = hltvserver->GetHLTVServer()->GetHLTVSlot() + 1;
-		IGamePlayer *pHLTVClient = playerhelpers->GetGamePlayer(iHLTVClient);
-		pHLTVClient->SetLanguageId(pClient->GetLanguageId());
+		int iHLTVRelay = hltvserver->GetHLTVServer()->GetHLTVSlot() + 1;
+		IGamePlayer *pHLTVRelay = playerhelpers->GetGamePlayer(iHLTVRelay);
+		pHLTVRelay->SetLanguageId(pClient->GetLanguageId());
 
-		int restoreTarget = translator->SetGlobalTarget(hltvserver->GetHLTVServer()->GetHLTVSlot() + 1);
+		int restoreTarget = translator->SetGlobalTarget(iHLTVRelay);
 #endif
 
 		DetectExceptions eh(pContext);
 		len = smutils->FormatString(buffer, sizeof(buffer), pContext, params, 2);
 
 #if SOURCE_ENGINE != SE_CSGO
-		pHLTVClient->SetLanguageId(translator->GetServerLanguage());
+		pHLTVRelay->SetLanguageId(translator->GetServerLanguage());
 		translator->SetGlobalTarget(restoreTarget);
 #endif
 
