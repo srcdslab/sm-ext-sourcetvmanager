@@ -27,6 +27,14 @@ const char *HLTVClientWrapper::Password()
 	return m_Password.chars();
 }
 
+unsigned int HLTVClientWrapper::GetLanguageId()
+{
+	// TODO expose natives to override spectator client language and remove native ifdefs
+	unsigned int langid = translator->GetServerLanguage();
+	translator->GetLanguageByName(m_Client->GetUserSetting("cl_language"), &langid);
+	return langid;
+}
+
 bool HLTVClientWrapper::IsConnected()
 {
 	return m_Client && m_Client->IsConnected();

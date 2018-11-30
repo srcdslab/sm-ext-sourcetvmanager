@@ -825,8 +825,24 @@ static cell_t Native_PrintToChat(IPluginContext *pContext, const cell_t *params)
 	char buffer[1024];
 	size_t len;
 	{
+
+#if SOURCE_ENGINE != SE_CSGO
+		// There's no way to set the current translation without a client index, so we'll save / restore the language on the relay.
+		int iHLTVRelay = hltvserver->GetHLTVServer()->GetHLTVSlot() + 1;
+		IGamePlayer *pHLTVRelay = playerhelpers->GetGamePlayer(iHLTVRelay);
+		pHLTVRelay->SetLanguageId(pClient->GetLanguageId());
+
+		int restoreTarget = translator->SetGlobalTarget(iHLTVRelay);
+#endif
+
 		DetectExceptions eh(pContext);
 		len = smutils->FormatString(buffer, sizeof(buffer), pContext, params, 2);
+
+#if SOURCE_ENGINE != SE_CSGO
+		pHLTVRelay->SetLanguageId(translator->GetServerLanguage());
+		translator->SetGlobalTarget(restoreTarget);
+#endif
+
 		if (eh.HasException())
 			return 0;
 	}
@@ -879,8 +895,24 @@ static cell_t Native_PrintToConsole(IPluginContext *pContext, const cell_t *para
 	char buffer[1024];
 	size_t len;
 	{
+
+#if SOURCE_ENGINE != SE_CSGO
+		// There's no way to set the current translation without a client index, so we'll save / restore the language on the relay.
+		int iHLTVRelay = hltvserver->GetHLTVServer()->GetHLTVSlot() + 1;
+		IGamePlayer *pHLTVRelay = playerhelpers->GetGamePlayer(iHLTVRelay);
+		pHLTVRelay->SetLanguageId(pClient->GetLanguageId());
+
+		int restoreTarget = translator->SetGlobalTarget(iHLTVRelay);
+#endif
+
 		DetectExceptions eh(pContext);
 		len = smutils->FormatString(buffer, sizeof(buffer), pContext, params, 2);
+
+#if SOURCE_ENGINE != SE_CSGO
+		pHLTVRelay->SetLanguageId(translator->GetServerLanguage());
+		translator->SetGlobalTarget(restoreTarget);
+#endif
+
 		if (eh.HasException())
 			return 0;
 	}

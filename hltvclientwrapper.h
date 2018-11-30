@@ -46,6 +46,7 @@ public:
 	const char *Name();
 	const char *Ip();
 	const char *Password();
+	unsigned int GetLanguageId();
 	bool IsConnected();
 	IClient *BaseClient();
 
