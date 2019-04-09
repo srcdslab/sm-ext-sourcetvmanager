@@ -113,12 +113,21 @@ void SourceTVManager::SDK_OnAllLoaded()
 #endif
 
 	SM_GET_LATE_IFACE(BINTOOLS, bintools);
+	if (!bintools)
+	{
+		smutils->LogError(myself, "Could not find interface: %s. Won't be able to send events to local spectators only.", SMINTERFACE_BINTOOLS_NAME);
+	}
 	SM_GET_LATE_IFACE(SDKTOOLS, sdktools);
+	if (!sdktools)
+	{
+		smutils->LogError(myself, "Could not find interface: %s. Some functions won't work.", SMINTERFACE_SDKTOOLS_NAME);
+	}
 
 	g_pSTVForwards.Init();
 	SetupNativeCalls();
 
-	iserver = sdktools->GetIServer();
+	if (sdktools)
+		iserver = sdktools->GetIServer();
 	if (!iserver)
 		smutils->LogError(myself, "Failed to get IServer interface from SDKTools. Some functions won't work.");
 

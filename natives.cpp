@@ -235,6 +235,9 @@ static bool BroadcastEventLocal(IHLTVServer *server, IGameEvent *event, bool bRe
 			return false;
 		}
 
+		if (!bintools)
+			return false;
+
 		PassInfo pass[2];
 		pass[0].flags = PASSFLAG_BYVAL;
 		pass[0].type = PassType_Basic;

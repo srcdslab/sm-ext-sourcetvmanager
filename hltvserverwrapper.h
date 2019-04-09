@@ -35,6 +35,7 @@
 #include "extension.h"
 #include "amtl/am-vector.h"
 #include "amtl/am-utility.h"
+#include "amtl/am-autoptr.h"
 
 class HLTVServerWrapper {
 public:
