@@ -236,7 +236,7 @@ _Pvt_Extensions
 .fake/
 
 # sm specific
-build/
+build*/
 vs/
 msvc*/
 *.smx
