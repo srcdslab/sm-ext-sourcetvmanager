@@ -130,6 +130,8 @@ void CForwardManager::Init()
 	}
 #endif
 
+	g_pSTVCommonHooks.Init();
+
 	m_StartRecordingFwd = forwards->CreateForward("SourceTV_OnStartRecording", ET_Ignore, 2, NULL, Param_Cell, Param_String);
 	m_StopRecordingFwd = forwards->CreateForward("SourceTV_OnStopRecording", ET_Ignore, 3, NULL, Param_Cell, Param_String, Param_Cell);
 	m_SpectatorPreConnectFwd = forwards->CreateForward("SourceTV_OnSpectatorPreConnect", ET_LowEvent, 4, NULL, Param_String, Param_String, Param_String, Param_String);
@@ -444,18 +446,38 @@ void CForwardManager::OnSpectatorPutInServer()
 	RETURN_META(MRES_IGNORED);
 }
 
-bool CForwardManager::OnSpectatorExecuteStringCommand(const char *s)
+bool CForwardManager::BaseClient_OnSpectatorExecuteStringCommand(const char *s)
 {
-	if (!hltvserver)
+	void *pGameClient = META_IFACEPTR(void);
+	if (!pGameClient)
 		RETURN_META_VALUE(MRES_IGNORED, true);
 
+	IClient *client = (IClient *)((intptr_t)pGameClient + 4);
+	HandleSpectatorExecuteStringCommand(client, s);
+	RETURN_META_VALUE(MRES_IGNORED, true);
+}
+
+bool CForwardManager::IClient_OnSpectatorExecuteStringCommand(const char *s)
+{
 	IClient *client = META_IFACEPTR(IClient);
-	if (!s || !s[0])
+	if (!client)
 		RETURN_META_VALUE(MRES_IGNORED, true);
+
+	HandleSpectatorExecuteStringCommand(client, s);
+	RETURN_META_VALUE(MRES_IGNORED, true);
+}
+
+void CForwardManager::HandleSpectatorExecuteStringCommand(IClient *client, const char *s)
+{
+	if (!hltvserver)
+		return;
+
+	if (!s || !s[0])
+		return;
 
 	CCommand args;
 	if (!args.Tokenize(s))
-		RETURN_META_VALUE(MRES_IGNORED, true);
+		return;
 
 	// See if the client wants to chat.
 	if (!Q_stricmp(args[0], "say") && args.ArgC() > 1)
@@ -466,8 +488,6 @@ bool CForwardManager::OnSpectatorExecuteStringCommand(const char *s)
 		hltvserver->SetLastChatClient(client);
 		hltvserver->SetLastChatMessage(args[1]);
 	}
-
-	RETURN_META_VALUE(MRES_IGNORED, true);
 }
 
 // Reset the pointers after the command was executed.
@@ -477,6 +497,7 @@ bool CForwardManager::OnSpectatorExecuteStringCommand_Post(const char *s)
 		RETURN_META_VALUE(MRES_IGNORED, true);
 
 	// TODO find correct hltvserver this client is connected to!
+	//      need separate hooks for IClient and CBaseClient in TF2
 
 	hltvserver->SetLastChatClient(nullptr);
 	hltvserver->SetLastChatMessage(nullptr);
@@ -486,8 +507,17 @@ bool CForwardManager::OnSpectatorExecuteStringCommand_Post(const char *s)
 
 DETOUR_DECL_MEMBER2(DetourHLTVServer_BroadcastLocalChat, void, const char *, chat, const char *, chatgroup)
 {
-	// IServer is +8 from CHLTVServer due to multiple inheritance
-	IServer *server = (IServer *)((intptr_t)this + 8);
+	static int hltvserver_inherit_offset = -1;
+	if (hltvserver_inherit_offset == -1)
+	{
+		if (!g_pGameConf->GetOffset("IServer_from_CHLTVServer", &hltvserver_inherit_offset) || hltvserver_inherit_offset == -1)
+		{
+			// IServer is +8 from CHLTVServer due to multiple inheritance - except for TF2?
+			hltvserver_inherit_offset = 8;
+		}
+	}
+
+	IServer *server = (IServer *)((intptr_t)this + hltvserver_inherit_offset);
 	HLTVServerWrapper *wrapper = g_HLTVServers.GetWrapper(server);
 
 	// Copy content in changeable buffer.

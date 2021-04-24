@@ -36,8 +36,12 @@ class IClient;
 class CForwardManager;
 class HLTVServerWrapper;
 
+#define NEED_EXECUTESTRINGCMD_CBASECLIENT !defined(WIN32) && SOURCE_ENGINE == SE_TF2
+
 class CCommonHooks {
 public:
+	void Init();
+
 	// For forwards
 	void AddSpectatorHook(CForwardManager *fwdmgr, IClient *client);
 	void RemoveSpectatorHook(CForwardManager *fwdmgr, IClient *client);
@@ -45,6 +49,11 @@ public:
 	// For host_client and status fix
 	void AddHLTVClientHook(HLTVServerWrapper *wrapper, IClient *client);
 	void RemoveHLTVClientHook(HLTVServerWrapper *wrapper, IClient *client);
+
+private:
+#ifdef NEED_EXECUTESTRINGCMD_CBASECLIENT
+	bool m_bHasExecuteStringCommandOffset = false;
+#endif
 };
 
 extern CCommonHooks g_pSTVCommonHooks;
