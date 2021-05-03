@@ -33,9 +33,9 @@
 #define _INCLUDE_SOURCEMOD_EXTENSION_HLTVSERVER_H_
 
 #include "extension.h"
-#include "amtl/am-vector.h"
 #include "amtl/am-utility.h"
-#include "amtl/am-autoptr.h"
+#include <vector>
+#include <memory>
 
 class HLTVServerWrapper {
 public:
@@ -74,7 +74,7 @@ private:
 	bool m_Connected = false;
 	IHLTVServer *m_HLTVServer = nullptr;
 	IDemoRecorder *m_DemoRecorder = nullptr;
-	ke::Vector<ke::AutoPtr<HLTVClientWrapper>> m_Clients;
+	std::vector<std::unique_ptr<HLTVClientWrapper>> m_Clients;
 
 	IClient *m_LastChatClient = nullptr;
 	const char *m_LastChatMessage = nullptr;
@@ -106,7 +106,7 @@ private:
 #endif
 	bool m_bHasClientPrintfOffset = false;
 	bool m_bHasShutdownOffset = false;
-	ke::Vector<ke::AutoPtr<HLTVServerWrapper>> m_HLTVServers;
+	std::vector<std::unique_ptr<HLTVServerWrapper>> m_HLTVServers;
 };
 
 extern HLTVServerWrapperManager g_HLTVServers;
