@@ -108,56 +108,17 @@ jobs:
         
       - name: Setting up ambuild
         working-directory: ambuild
-        run: python setup.py install
-          
-      - name: Checking out hl2sdk-csgo
-        uses: actions/checkout@v2
-        with:
-          repository: alliedmodders/hl2sdk
-          ref: csgo
-          path: hl2sdk-csgo
-          
-      - name: Checking out hl2sdk-tf2
-        uses: actions/checkout@v2
-        with:
-          repository: alliedmodders/hl2sdk
-          ref: tf2
-          path: hl2sdk-tf2
-          
-      - name: Checking out hl2sdk-css
-        uses: actions/checkout@v2
-        with:
-          repository: alliedmodders/hl2sdk
-          ref: css
-          path: hl2sdk-css
-          
-      - name: Checking out hl2sdk-hl2dm
-        uses: actions/checkout@v2
-        with:
-          repository: alliedmodders/hl2sdk
-          ref: hl2dm
-          path: hl2sdk-hl2dm
-          
-      - name: Checking out hl2sdk-dods
-        uses: actions/checkout@v2
-        with:
-          repository: alliedmodders/hl2sdk
-          ref: dods
-          path: hl2sdk-dods
+        run: pip install .
         
-      - name: Checking out hl2sdk-l4d2
-        uses: actions/checkout@v2
-        with:
-          repository: alliedmodders/hl2sdk
-          ref: l4d2
-          path: hl2sdk-l4d2
-          
-      - name: Checking out hl2sdk-l4d
-        uses: actions/checkout@v2
-        with:
-          repository: alliedmodders/hl2sdk
-          ref: l4d
-          path: hl2sdk-l4d
+      - name: Getting SDKs
+        shell: bash
+        run: |
+          git clone --mirror https://github.com/alliedmodders/hl2sdk hl2sdk-proxy-repo
+          sdks=(csgo tf2 css hl2dm dods l4d2 l4d)
+          for sdk in "${sdks[@]}"
+          do
+            git clone hl2sdk-proxy-repo -b $sdk hl2sdk-$sdk
+          done
           
       - name: Checking out own repository
         uses: actions/checkout@v2
