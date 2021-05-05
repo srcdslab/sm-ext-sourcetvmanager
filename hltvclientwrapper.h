@@ -36,6 +36,7 @@
 #include "amtl/am-string.h"
 #include "amtl/am-vector.h"
 #include "amtl/am-utility.h"
+#include <string>
 
 class HLTVClientWrapper {
 public:
@@ -53,8 +54,8 @@ public:
 	void Kick(const char *reason);
 
 private:
-	ke::AString m_Ip;
-	ke::AString m_Password;
+	std::string m_Ip;
+	std::string m_Password;
 	IClient *m_Client;
 };
 #endif // _INCLUDE_SOURCEMOD_EXTENSION_HLTVCLIENT_H_

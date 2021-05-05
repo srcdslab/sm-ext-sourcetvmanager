@@ -109,9 +109,9 @@ HLTVClientWrapper *HLTVServerWrapper::GetClient(int index)
 {
 	// Grow the vector with null pointers
 	// There might have been clients with lower indexes before we were loaded.
-	if (m_Clients.length() < (size_t)index)
+	if (m_Clients.size() < (size_t)index)
 	{
-		int start = m_Clients.length();
+		int start = m_Clients.size();
 		m_Clients.resize(index);
 		for (int i = start; i < index; i++)
 		{
@@ -121,10 +121,10 @@ HLTVClientWrapper *HLTVServerWrapper::GetClient(int index)
 
 	if (!m_Clients[index - 1])
 	{
-		m_Clients[index - 1] = new HLTVClientWrapper();
+		m_Clients[index - 1] = std::make_unique<HLTVClientWrapper>();
 	}
 
-	return m_Clients[index - 1];
+	return m_Clients[index - 1].get();
 }
 
 void HLTVServerWrapper::Hook()
@@ -376,29 +376,28 @@ void HLTVServerWrapperManager::AddServer(IHLTVServer *hltvserver)
 	g_pSTVForwards.CreateStopRecordingDetour();
 #endif
 
-	HLTVServerWrapper *wrapper = new HLTVServerWrapper(hltvserver);
-	m_HLTVServers.append(wrapper);
+	m_HLTVServers.emplace_back(new HLTVServerWrapper(hltvserver));
 }
 
 void HLTVServerWrapperManager::RemoveServer(IHLTVServer *hltvserver, bool bInformPlugins)
 {
-	for (unsigned int i = 0; i < m_HLTVServers.length(); i++)
+	for (unsigned int i = 0; i < m_HLTVServers.size(); i++)
 	{
-		HLTVServerWrapper *wrapper = m_HLTVServers[i];
+		HLTVServerWrapper *wrapper = m_HLTVServers[i].get();
 		if (wrapper->GetHLTVServer() != hltvserver)
 			continue;
 
 		wrapper->Shutdown(bInformPlugins);
-		m_HLTVServers.remove(i);
+		m_HLTVServers.erase(m_HLTVServers.begin() + i);
 		break;
 	}
 }
 
 HLTVServerWrapper *HLTVServerWrapperManager::GetWrapper(IHLTVServer *hltvserver)
 {
-	for (unsigned int i = 0; i < m_HLTVServers.length(); i++)
+	for (unsigned int i = 0; i < m_HLTVServers.size(); i++)
 	{
-		HLTVServerWrapper *wrapper = m_HLTVServers[i];
+		HLTVServerWrapper *wrapper = m_HLTVServers[i].get();
 		if (wrapper->GetHLTVServer() == hltvserver)
 			return wrapper;
 	}
@@ -407,9 +406,9 @@ HLTVServerWrapper *HLTVServerWrapperManager::GetWrapper(IHLTVServer *hltvserver)
 
 HLTVServerWrapper *HLTVServerWrapperManager::GetWrapper(IServer *server)
 {
-	for (unsigned int i = 0; i < m_HLTVServers.length(); i++)
+	for (unsigned int i = 0; i < m_HLTVServers.size(); i++)
 	{
-		HLTVServerWrapper *wrapper = m_HLTVServers[i];
+		HLTVServerWrapper *wrapper = m_HLTVServers[i].get();
 		if (wrapper->GetBaseServer() == server)
 			return wrapper;
 	}
@@ -418,9 +417,9 @@ HLTVServerWrapper *HLTVServerWrapperManager::GetWrapper(IServer *server)
 
 HLTVServerWrapper *HLTVServerWrapperManager::GetWrapper(IDemoRecorder *demorecorder)
 {
-	for (unsigned int i = 0; i < m_HLTVServers.length(); i++)
+	for (unsigned int i = 0; i < m_HLTVServers.size(); i++)
 	{
-		HLTVServerWrapper *wrapper = m_HLTVServers[i];
+		HLTVServerWrapper *wrapper = m_HLTVServers[i].get();
 		if (wrapper->GetDemoRecorder() != nullptr && wrapper->GetDemoRecorder() == demorecorder)
 			return wrapper;
 	}

@@ -19,12 +19,12 @@ const char *HLTVClientWrapper::Name()
 
 const char *HLTVClientWrapper::Ip()
 {
-	return m_Ip.chars();
+	return m_Ip.c_str();
 }
 
 const char *HLTVClientWrapper::Password()
 {
-	return m_Password.chars();
+	return m_Password.c_str();
 }
 
 unsigned int HLTVClientWrapper::GetLanguageId()
