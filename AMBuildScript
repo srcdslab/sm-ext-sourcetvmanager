@@ -174,7 +174,6 @@ class ExtensionConfig(object):
       '-Wno-switch',
       '-Wno-array-bounds',
       '-Wno-expansion-to-defined',
-      '-Wno-implicit-const-int-float-conversion',
       '-msse',
       '-m32',
       '-fvisibility=hidden',
@@ -207,6 +206,11 @@ class ExtensionConfig(object):
       else:
         cxx.cxxflags += ['-Wno-deprecated']
       cxx.cflags += ['-Wno-sometimes-uninitialized']
+
+    if cxx.version >= 'clang-10.0' or cxx.version >= 'apple-clang-12.0':
+      cxx.cflags += [
+        '-Wno-implicit-const-int-float-conversion',
+      ]
 
     if have_gcc:
       cxx.cflags += ['-mfpmath=sse']
