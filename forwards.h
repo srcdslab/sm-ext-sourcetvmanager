@@ -85,7 +85,8 @@ public:
 	bool CallOnSpectatorChatMessage(HLTVServerWrapper *server, char *msg, int msglen, char *chatgroup, int grouplen);
 	void CallOnSpectatorChatMessage_Post(HLTVServerWrapper *server, const char *msg, const char *chatgroup);
 
-	bool OnSpectatorExecuteStringCommand(const char *s);
+	bool BaseClient_OnSpectatorExecuteStringCommand(const char *s);
+	bool IClient_OnSpectatorExecuteStringCommand(const char *s);
 	bool OnSpectatorExecuteStringCommand_Post(const char *s);
 	void CreateBroadcastLocalChatDetour();
 	void RemoveBroadcastLocalChatDetour();
@@ -114,6 +115,7 @@ private:
 
 private:
 	void HandleSpectatorDisconnect(IClient *client, const char *reason);
+	void HandleSpectatorExecuteStringCommand(IClient *client, const char *s);
 
 private:
 	IForward *m_StartRecordingFwd;

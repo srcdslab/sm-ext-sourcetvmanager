@@ -263,6 +263,11 @@
 				"linux"	"14"
 			}
 			
+			"CBaseClient::ExecuteStringCommand"
+			{
+				"linux"	"22"
+			}
+			
 			"CHLTVServer::Shutdown"
 			{
 				"windows"	"41"
@@ -289,6 +294,11 @@
 			"CHLTVDemoRecorder_BaseOffset"
 			{
 				"windows"	"0"
+				"linux"	"4"
+			}
+
+			"IServer_from_CHLTVServer"
+			{
 				"linux"	"4"
 			}
 		}
