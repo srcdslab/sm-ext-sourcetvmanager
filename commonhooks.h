@@ -51,7 +51,7 @@ public:
 	void RemoveHLTVClientHook(HLTVServerWrapper *wrapper, IClient *client);
 
 private:
-#ifdef NEED_EXECUTESTRINGCMD_CBASECLIENT
+#if NEED_EXECUTESTRINGCMD_CBASECLIENT
 	bool m_bHasExecuteStringCommandOffset = false;
 #endif
 };

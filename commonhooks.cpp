@@ -41,13 +41,13 @@ CCommonHooks g_pSTVCommonHooks;
 SH_DECL_HOOK1(IClient, ExecuteStringCommand, SH_NOATTRIB, 0, bool, const char *);
 
 // TF2 appears to call CBaseClient directly instead of IClient for this on linux..
-#ifdef NEED_EXECUTESTRINGCMD_CBASECLIENT
+#if NEED_EXECUTESTRINGCMD_CBASECLIENT
 SH_DECL_MANUALHOOK1(CBaseClient_ExecuteStringCommand, 0, 0, 0, bool, const char *);
 #endif
 
 void CCommonHooks::Init()
 {
-#ifdef NEED_EXECUTESTRINGCMD_CBASECLIENT
+#if NEED_EXECUTESTRINGCMD_CBASECLIENT
 	int offset = -1;
 	if (!g_pGameConf->GetOffset("CBaseClient::ExecuteStringCommand", &offset) || offset == -1)
 	{
@@ -66,7 +66,7 @@ void CCommonHooks::AddSpectatorHook(CForwardManager *fwdmgr, IClient *client)
 	SH_ADD_HOOK(IClient, ExecuteStringCommand, client, SH_MEMBER(fwdmgr, &CForwardManager::IClient_OnSpectatorExecuteStringCommand), false);
 	SH_ADD_HOOK(IClient, ExecuteStringCommand, client, SH_MEMBER(fwdmgr, &CForwardManager::OnSpectatorExecuteStringCommand_Post), true);
 
-#ifdef NEED_EXECUTESTRINGCMD_CBASECLIENT
+#if NEED_EXECUTESTRINGCMD_CBASECLIENT
 	void *pGameClient = (void *)((intptr_t)client - 4);
 	if (m_bHasExecuteStringCommandOffset)
 	{
@@ -81,7 +81,7 @@ void CCommonHooks::RemoveSpectatorHook(CForwardManager *fwdmgr, IClient *client)
 	SH_REMOVE_HOOK(IClient, ExecuteStringCommand, client, SH_MEMBER(fwdmgr, &CForwardManager::IClient_OnSpectatorExecuteStringCommand), false);
 	SH_REMOVE_HOOK(IClient, ExecuteStringCommand, client, SH_MEMBER(fwdmgr, &CForwardManager::OnSpectatorExecuteStringCommand_Post), true);
 
-#ifdef NEED_EXECUTESTRINGCMD_CBASECLIENT
+#if NEED_EXECUTESTRINGCMD_CBASECLIENT
 	void *pGameClient = (void *)((intptr_t)client - 4);
 	if (m_bHasExecuteStringCommandOffset)
 	{
