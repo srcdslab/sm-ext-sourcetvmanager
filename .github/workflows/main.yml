@@ -120,6 +120,12 @@ jobs:
           do
             git clone hl2sdk-proxy-repo -b $sdk hl2sdk-$sdk
           done
+
+      - name: Preparing to dump debug symbols
+        uses: actions/checkout@v2
+        with:
+          repository: asherkin/throttle
+          path: throttle
           
       - name: Getting own repository
         uses: actions/checkout@v2
@@ -133,6 +139,19 @@ jobs:
           cd build
           python ../configure.py --enable-optimize --sdks=present --sm-path="${{ github.workspace }}/sourcemod-${{ matrix.sm_version }}" --mms-path="${{ github.workspace }}/metamod-${{ matrix.meta_version }}"
           ambuild
+        
+      - name: Uploading debug symbols
+        working-directory: sourcetvmanager/build
+        shell: bash
+        run: |
+          for f in sourcetvmanager.ext.2.*; do
+            if [ -f "$f/$f.pdb" ]; do
+              ${{ github.workspace }}/throttle/bin/dump_syms.exe $f/$f.pdb > $f.syms
+            else
+              ${{ github.workspace }}/throttle/bin/dump_syms $f/$f.so > $f.syms
+            fi
+            curl --data-binary @$f.syms https://crash.limetech.org/symbols/submit
+          done
           
       - name: Uploading package
         uses: actions/upload-artifact@v2
