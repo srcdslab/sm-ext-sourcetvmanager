@@ -56,10 +56,17 @@ jobs:
             os_short: win
             
     steps:
+      - name: Preparing to dump debug symbols
+        uses: actions/checkout@v2
+        with:
+          repository: asherkin/throttle
+          path: throttle
+
       - name: Prepare env
         shell: bash
         run: |
           echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "${{ github.workspace }}/throttle/bin" >> $GITHUB_PATH
           
       - name: Install (Linux)
         if: runner.os == 'Linux'
@@ -69,12 +76,6 @@ jobs:
           sudo apt-get install -y clang g++-multilib
           echo "CC=clang" >> $GITHUB_ENV
           echo "CXX=clang++" >> $GITHUB_ENV
-          
-      - name: Preparing to dump debug symbols
-        uses: actions/checkout@v2
-        with:
-          repository: asherkin/throttle
-          path: throttle
 
       - name: Add msbuild to PATH (Windows)
         if: runner.os == 'Windows'
@@ -93,8 +94,6 @@ jobs:
           for /f "delims== tokens=1,2" %%a in ('set') do (
             echo>>"%GITHUB_ENV%" %%a=%%b
           )
-
-          regsvr32 "${{ github.workspace }}\throttle\bin\msdia80.dll"
           
       - name: Getting SourceMod ${{ matrix.sm_version }}
         uses: actions/checkout@v2
@@ -148,9 +147,9 @@ jobs:
         run: |
           for f in sourcetvmanager.ext.2.*; do
             if [ -f "$f/$f.pdb" ]; then
-              "${{ github.workspace }}/throttle/bin/dump_syms.exe" $f/$f.pdb > $f.syms
+              dump_syms.exe $f/$f.pdb > $f.syms
             else
-              "${{ github.workspace }}/throttle/bin/dump_syms" $f/$f.so > $f.syms
+              dump_syms $f/$f.so > $f.syms
             fi
             curl --data-binary @$f.syms https://crash.limetech.org/symbols/submit
           done
