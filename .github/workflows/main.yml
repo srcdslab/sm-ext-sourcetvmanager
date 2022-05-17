@@ -145,7 +145,7 @@ jobs:
         shell: bash
         run: |
           for f in sourcetvmanager.ext.2.*; do
-            if [ -f "$f/$f.pdb" ]; do
+            if [ -f "$f/$f.pdb" ]; then
               ${{ github.workspace }}/throttle/bin/dump_syms.exe $f/$f.pdb > $f.syms
             else
               ${{ github.workspace }}/throttle/bin/dump_syms $f/$f.so > $f.syms
