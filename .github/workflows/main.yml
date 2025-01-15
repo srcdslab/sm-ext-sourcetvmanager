@@ -2,10 +2,18 @@ name: build
 
 on:
   push:
+    branches:
+      - main
+      - master
     paths-ignore:
       - LICENSE
       - README.md
+    tags:
+      - '*'
   pull_request:
+    branches:
+      - main
+      - master
     paths-ignore:
       - LICENSE
       - README.md
@@ -69,6 +77,7 @@ jobs:
         with:
           repository: mozilla/dump_syms
           path: dump_syms
+
       - name: Install dump_syms
         run: cargo install --all-features --path ./dump_syms
 
@@ -163,5 +172,37 @@ jobs:
       - name: Uploading package
         uses: actions/upload-artifact@v4
         with:
-          name: sourcetvmanager-sm${{ matrix.sm_version }}-${{ matrix.os_short }}-${{ env.GITHUB_SHA_SHORT }}
+          name: sourcetvmanager-sm${{ matrix.sm_version }}-${{ matrix.os_short }}
           path: sourcetvmanager/build/package
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Package
+        run: |
+          version=`echo $GITHUB_REF | sed "s/refs\/tags\///"`
+
+          ls -Rall
+
+          for folder in sourcetvmanager*
+          do
+            echo "Processing folder: $folder"
+            cd $folder
+            tar -czf ../${folder}-${version}.tar.gz -T <(\ls -1)
+            cd -
+          done
+
+      - name: Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: '*.tar.gz'
+          tag: ${{ github.ref }}
+          file_glob: true
